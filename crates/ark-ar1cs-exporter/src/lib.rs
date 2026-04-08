@@ -1,3 +1,5 @@
+#![deny(unsafe_code)]
+
 use std::io::Write;
 
 use ark_ar1cs_format::{ArcsError, ArcsFile, CurveId};
@@ -10,6 +12,11 @@ use ark_relations::r1cs::{
 pub enum ExportError {
     Synthesis(SynthesisError),
     Format(ArcsError),
+    /// `cs.to_matrices()` returned `None`.
+    ///
+    /// This should not happen when the CS was created in setup mode and
+    /// `finalize()` was called — but is handled explicitly rather than panicking.
+    MatricesUnavailable,
 }
 
 impl std::fmt::Display for ExportError {
@@ -17,6 +24,9 @@ impl std::fmt::Display for ExportError {
         match self {
             ExportError::Synthesis(e) => write!(f, "synthesis error: {e}"),
             ExportError::Format(e) => write!(f, "format error: {e}"),
+            ExportError::MatricesUnavailable => {
+                write!(f, "constraint system matrices unavailable after finalization")
+            }
         }
     }
 }
@@ -62,9 +72,7 @@ where
     circuit.generate_constraints(cs.clone())?;
     cs.finalize();
 
-    let matrices = cs.to_matrices().ok_or_else(|| {
-        ExportError::Synthesis(SynthesisError::AssignmentMissing)
-    })?;
+    let matrices = cs.to_matrices().ok_or(ExportError::MatricesUnavailable)?;
 
     let file = ArcsFile::from_matrices(curve_id, &matrices);
     file.write(writer)?;

@@ -75,7 +75,7 @@ fn exported_matrices_match_original() {
     // Export → import → synthesize
     let mut buf = Vec::new();
     export_circuit::<Fr, _, _>(setup_circuit(), CurveId::Bn254, &mut buf).unwrap();
-    let imported = ImportedCircuit::<Fr>::from_reader(&mut buf.as_slice()).unwrap();
+    let imported = ImportedCircuit::<Fr>::from_reader(&mut buf.as_slice(), CurveId::Bn254).unwrap();
 
     let cs2 = ConstraintSystem::<Fr>::new_ref();
     cs2.set_optimization_goal(OptimizationGoal::Constraints);
@@ -109,7 +109,7 @@ fn proving_keys_match() {
         .expect("export failed");
 
     // --- setup from imported circuit (same seed) ---
-    let imported = ImportedCircuit::<Fr>::from_reader(&mut buf.as_slice())
+    let imported = ImportedCircuit::<Fr>::from_reader(&mut buf.as_slice(), CurveId::Bn254)
         .expect("import failed");
     let pk_imported = Groth16::<Bn254>::generate_random_parameters_with_reduction(
         imported,

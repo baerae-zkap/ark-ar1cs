@@ -3,5 +3,6 @@ members = [
     "crates/ark-ar1cs-format",
     "crates/ark-ar1cs-exporter",
     "crates/ark-ar1cs-importer",
+    "crates/ark-ar1cs-test-fixtures",
 ]
 resolver = "2"

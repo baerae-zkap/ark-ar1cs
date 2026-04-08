@@ -1,4 +1,11 @@
-use std::io::{Read, Write};
+use std::io::{Cursor, Read, Write};
+
+/// Maximum file size accepted by [`ArcsFile::read`].
+///
+/// Files larger than this limit are rejected with [`ArcsError::FileTooLarge`]
+/// before any parsing occurs, preventing unbounded memory allocation from
+/// oversized or adversarial inputs.
+pub const MAX_FILE_BYTES: u64 = 256 * 1024 * 1024; // 256 MB
 
 use ark_ff::PrimeField;
 use ark_relations::r1cs::ConstraintMatrices;
@@ -15,6 +22,19 @@ use crate::{
 ///   index 0           — the implicit "1" wire (pre-allocated by arkworks)
 ///   1..num_instance_variables — explicit public inputs
 ///   num_instance_variables..  — witness variables
+///
+/// # File layout
+///
+/// ```text
+/// [header: 57 bytes]
+/// [matrix A: custom serialization]
+/// [matrix B: custom serialization]
+/// [matrix C: custom serialization]
+/// [Blake3 checksum: 32 bytes trailer]
+/// ```
+///
+/// The 32-byte trailer is the Blake3 hash of all preceding bytes (header + matrices).
+/// `read` verifies the checksum before parsing. `write` appends it automatically.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArcsFile<F: PrimeField> {
     pub header: ArcsHeader,
@@ -58,33 +78,106 @@ impl<F: PrimeField> ArcsFile<F> {
         }
     }
 
+    /// Serialize to `w`, appending a 32-byte Blake3 checksum trailer.
     pub fn write<W: Write>(&self, w: &mut W) -> Result<(), ArcsError> {
-        self.header.write(w)?;
-        write_matrix(&self.a, w)?;
-        write_matrix(&self.b, w)?;
-        write_matrix(&self.c, w)?;
+        // Serialize header + matrices into a local buffer so we can hash them.
+        let mut body: Vec<u8> = Vec::new();
+        self.header.write(&mut body)?;
+        write_matrix(&self.a, &mut body)?;
+        write_matrix(&self.b, &mut body)?;
+        write_matrix(&self.c, &mut body)?;
+
+        // Compute Blake3 hash of the body and append as trailer.
+        let hash = blake3::hash(&body);
+
+        w.write_all(&body)?;
+        w.write_all(hash.as_bytes())?;
         Ok(())
     }
 
+    /// Deserialize from `r`.
+    ///
+    /// Reads all bytes, verifies the 32-byte Blake3 checksum trailer, then
+    /// parses and validates the header + matrices. Bounded allocation:
+    /// `read_matrix` rejects files whose row/entry counts exceed the header.
     pub fn read<R: Read>(r: &mut R) -> Result<Self, ArcsError> {
-        let header = ArcsHeader::read(r)?;
-        let a = read_matrix(r)?;
-        let b = read_matrix(r)?;
-        let c = read_matrix(r)?;
+        // Read the entire file into memory so we can verify the checksum.
+        // Limit reads to MAX_FILE_BYTES to prevent OOM from oversized streams.
+        // We read one extra byte: if we get exactly MAX_FILE_BYTES+1 bytes,
+        // the file is over the limit and we return FileTooLarge.
+        let mut all_bytes = Vec::new();
+        r.take(MAX_FILE_BYTES + 1).read_to_end(&mut all_bytes)?;
+        if all_bytes.len() as u64 > MAX_FILE_BYTES {
+            return Err(ArcsError::FileTooLarge);
+        }
+
+        const CHECKSUM_LEN: usize = 32;
+        if all_bytes.len() < CHECKSUM_LEN {
+            return Err(ArcsError::Io(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "file too short to contain checksum trailer",
+            )));
+        }
+
+        let (body, stored_hash) = all_bytes.split_at(all_bytes.len() - CHECKSUM_LEN);
+        let computed_hash = blake3::hash(body);
+        if stored_hash != computed_hash.as_bytes() {
+            return Err(ArcsError::ChecksumMismatch);
+        }
+
+        // Parse header + matrices from the verified body.
+        let mut cursor = Cursor::new(body);
+        let header = ArcsHeader::read(&mut cursor)?;
+        let a = read_matrix(
+            &mut cursor,
+            header.num_constraints as usize,
+            header.a_non_zero as usize,
+        )?;
+        let b = read_matrix(
+            &mut cursor,
+            header.num_constraints as usize,
+            header.b_non_zero as usize,
+        )?;
+        let c = read_matrix(
+            &mut cursor,
+            header.num_constraints as usize,
+            header.c_non_zero as usize,
+        )?;
+
+        // Reject files with trailing bytes between the matrices and the checksum.
+        // Without this check, two different byte sequences could deserialize to the same
+        // ArcsFile, violating the canonical-serialization invariant required for
+        // content-addressed ceremony use cases.
+        if cursor.position() != body.len() as u64 {
+            return Err(ArcsError::ValidationFailed(format!(
+                "unexpected trailing bytes: {} byte(s) after matrix data",
+                body.len() as u64 - cursor.position(),
+            )));
+        }
+
         let file = ArcsFile { header, a, b, c };
         file.validate()?;
         Ok(file)
     }
 
-    /// Checks that header counts are consistent with the actual matrix dimensions.
+    /// Check that header counts are consistent with actual matrix dimensions.
     ///
-    /// This catches the silent-correctness-bug scenario: if the header's
-    /// `num_constraints` doesn't match the number of matrix rows, arkworks'
-    /// `generate_parameters` will compute the wrong FFT domain size.
+    /// Guards the silent-correctness-bug scenario: if `num_constraints` doesn't
+    /// match the matrix row count, arkworks' `generate_parameters` computes the
+    /// wrong FFT domain size and produces silently wrong proving keys.
     pub fn validate(&self) -> Result<(), ArcsError> {
         let h = &self.header;
 
-        // Row counts must match num_constraints
+        // The implicit "1" wire at index 0 is always pre-allocated by arkworks.
+        if h.num_instance_variables == 0 {
+            return Err(ArcsError::ValidationFailed(
+                "num_instance_variables must be >= 1 \
+                 (implicit \"1\" wire always occupies index 0)"
+                    .into(),
+            ));
+        }
+
+        // Row counts must match num_constraints.
         for (name, matrix) in [("a", &self.a), ("b", &self.b), ("c", &self.c)] {
             if matrix.len() as u64 != h.num_constraints {
                 return Err(ArcsError::ValidationFailed(format!(
@@ -95,7 +188,7 @@ impl<F: PrimeField> ArcsFile<F> {
             }
         }
 
-        // Non-zero entry counts must match header
+        // Non-zero entry counts must match header.
         let a_nz = self.a.iter().map(|r| r.len() as u64).sum::<u64>();
         let b_nz = self.b.iter().map(|r| r.len() as u64).sum::<u64>();
         let c_nz = self.c.iter().map(|r| r.len() as u64).sum::<u64>();
@@ -117,6 +210,31 @@ impl<F: PrimeField> ArcsFile<F> {
                 "c_non_zero: header says {}, matrices have {c_nz}",
                 h.c_non_zero
             )));
+        }
+
+        // Column indices must be within [0, num_instance_variables + num_witness_variables).
+        // An out-of-bounds index would cause the importer to reference an unallocated
+        // variable, producing a silently wrong constraint system.
+        //
+        // Use checked_add: if the sum overflows usize, any column index would trivially
+        // pass a saturating bound (saturating to usize::MAX), defeating the check entirely.
+        let max_col = (h.num_instance_variables as usize)
+            .checked_add(h.num_witness_variables as usize)
+            .ok_or_else(|| {
+                ArcsError::ValidationFailed(
+                    "num_instance_variables + num_witness_variables overflows usize".into(),
+                )
+            })?;
+        for (name, matrix) in [("a", &self.a), ("b", &self.b), ("c", &self.c)] {
+            for row in matrix {
+                for (_coeff, col) in row {
+                    if *col >= max_col {
+                        return Err(ArcsError::ValidationFailed(format!(
+                            "matrix {name}: col {col} out of bounds (max {max_col})"
+                        )));
+                    }
+                }
+            }
         }
 
         Ok(())
