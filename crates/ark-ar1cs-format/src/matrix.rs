@@ -30,16 +30,42 @@ pub fn write_matrix<F: PrimeField, W: Write>(
     Ok(())
 }
 
-pub fn read_matrix<F: PrimeField, R: Read>(r: &mut R) -> Result<Matrix<F>, ArcsError> {
+/// Read one R1CS matrix from `r`, validating bounds against header counts
+/// before allocating — preventing OOM from crafted files.
+///
+/// * `expected_rows` — must equal `num_rows` encoded in the stream
+/// * `expected_nz`   — the total non-zero entry budget for this matrix
+pub fn read_matrix<F: PrimeField, R: Read>(
+    r: &mut R,
+    expected_rows: usize,
+    expected_nz: usize,
+) -> Result<Matrix<F>, ArcsError> {
     let mut buf = [0u8; 8];
 
     r.read_exact(&mut buf)?;
     let num_rows = u64::from_le_bytes(buf) as usize;
+    if num_rows != expected_rows {
+        return Err(ArcsError::ValidationFailed(format!(
+            "expected {expected_rows} rows, found {num_rows}"
+        )));
+    }
 
     let mut matrix = Vec::with_capacity(num_rows);
+    let mut total_entries: usize = 0;
+
     for _ in 0..num_rows {
         r.read_exact(&mut buf)?;
         let num_entries = u64::from_le_bytes(buf) as usize;
+
+        // Budget check: reject before allocating if this row would exceed budget.
+        total_entries = total_entries.checked_add(num_entries).ok_or_else(|| {
+            ArcsError::ValidationFailed("non-zero entry count overflow".into())
+        })?;
+        if total_entries > expected_nz {
+            return Err(ArcsError::ValidationFailed(format!(
+                "non-zero entries exceed header count {expected_nz}"
+            )));
+        }
 
         let mut row = Vec::with_capacity(num_entries);
         for _ in 0..num_entries {
@@ -50,5 +76,12 @@ pub fn read_matrix<F: PrimeField, R: Read>(r: &mut R) -> Result<Matrix<F>, ArcsE
         }
         matrix.push(row);
     }
+
+    if total_entries != expected_nz {
+        return Err(ArcsError::ValidationFailed(format!(
+            "expected {expected_nz} non-zero entries, found {total_entries}"
+        )));
+    }
+
     Ok(matrix)
 }

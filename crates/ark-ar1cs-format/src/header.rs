@@ -27,7 +27,7 @@ impl TryFrom<u8> for CurveId {
 
 /// The fixed-size binary header for an `.ar1cs` file.
 ///
-/// Layout (33 bytes total):
+/// Layout (57 bytes total):
 ///   magic[6]  version[1]  curve_id[1]  reserved[1]
 ///   num_instance_variables[8 LE]
 ///   num_witness_variables[8 LE]
