@@ -1,6 +1,8 @@
+#![deny(unsafe_code)]
+
 use std::io::Read;
 
-use ark_ar1cs_format::{ArcsError, ArcsFile};
+use ark_ar1cs_format::{ArcsError, ArcsFile, CurveId};
 use ark_ff::PrimeField;
 use ark_relations::r1cs::{
     ConstraintSynthesizer, ConstraintSystemRef, LinearCombination, SynthesisError, Variable,
@@ -18,16 +20,29 @@ use ark_relations::r1cs::{
 ///    the explicit public inputs.
 /// 2. `cs.new_witness_variable(|| Ok(F::zero()))` × `num_witness_variables`
 /// 3. `cs.enforce_constraint(lc_a, lc_b, lc_c)` for every constraint row.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ImportedCircuit<F: PrimeField> {
     file: ArcsFile<F>,
 }
 
 impl<F: PrimeField> ImportedCircuit<F> {
-    pub fn from_reader<R: Read>(r: &mut R) -> Result<Self, ArcsError> {
-        Ok(ImportedCircuit {
-            file: ArcsFile::read(r)?,
-        })
+    /// Read an `.ar1cs` file from `r` and verify that its curve ID matches
+    /// `expected_curve_id`.
+    ///
+    /// Returns `ArcsError::CurveIdMismatch` if the file was produced for a
+    /// different curve, preventing silent field-element misinterpretation.
+    pub fn from_reader<R: Read>(
+        r: &mut R,
+        expected_curve_id: CurveId,
+    ) -> Result<Self, ArcsError> {
+        let file = ArcsFile::read(r)?;
+        if file.header.curve_id != expected_curve_id {
+            return Err(ArcsError::CurveIdMismatch {
+                expected: expected_curve_id,
+                found: file.header.curve_id,
+            });
+        }
+        Ok(ImportedCircuit { file })
     }
 }
 
