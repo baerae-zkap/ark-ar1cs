@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "crates/ark-ar1cs-format",
+    "crates/ark-ar1cs-exporter",
+    "crates/ark-ar1cs-importer",
+]
+resolver = "2"

@@ -1,0 +1,13 @@
+[package]
+name = "ark-ar1cs-importer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ark-ar1cs-format = { path = "../ark-ar1cs-format" }
+ark-ff = "0.5.0"
+ark-relations = "0.5.1"
+
+[dev-dependencies]
+ark-bn254 = "0.5.0"
+ark-ar1cs-format = { path = "../ark-ar1cs-format" }
