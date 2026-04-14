@@ -2,6 +2,11 @@
 name = "ark-ar1cs-exporter"
 version = "0.1.0"
 edition = "2021"
+description = "Export arkworks R1CS constraint systems to the portable .ar1cs format"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/leejw9357/ark-ar1cs"
+keywords = ["zkp", "groth16", "arkworks", "r1cs"]
+categories = ["cryptography"]
 
 [dependencies]
 ark-ar1cs-format = { path = "../ark-ar1cs-format" }
