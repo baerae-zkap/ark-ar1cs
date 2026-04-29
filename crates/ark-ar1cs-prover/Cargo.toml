@@ -21,6 +21,10 @@ ark-std = "0.5.0"
 thiserror = "2"
 
 [dev-dependencies]
+ark-ar1cs-importer = { path = "../ark-ar1cs-importer" }
+ark-ar1cs-test-fixtures = { path = "../ark-ar1cs-test-fixtures" }
+ark-bls12-381 = "0.5.0"
 ark-bn254 = "0.5.0"
 ark-ff = { version = "0.5.0", features = ["std"] }
+proptest = "1"
 rand = "0.8"
