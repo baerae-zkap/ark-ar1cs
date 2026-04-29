@@ -23,6 +23,7 @@ const TRAILER_LEN: usize = 32;
 /// partial-read client can fetch `[0, HEADER_SIZE + ar1cs_byte_len + vk_byte_len)`
 /// to extract the verifying key without downloading the multi-hundred-MB PK
 /// tail.
+#[derive(Debug)]
 pub struct ArzkeyFile<E: Pairing> {
     pub header: ArzkeyHeader,
     pub arcs: ArcsFile<E::ScalarField>,
