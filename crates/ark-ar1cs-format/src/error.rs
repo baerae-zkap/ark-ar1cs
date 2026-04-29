@@ -9,6 +9,9 @@ pub enum ArcsError {
     UnsupportedCurve(u8),
     /// The file's curve ID doesn't match what the caller expected.
     CurveIdMismatch { expected: CurveId, found: CurveId },
+    /// A reserved header byte was non-zero. Readers reject so each circuit
+    /// has exactly one canonical `.ar1cs` byte sequence.
+    ReservedNotZero,
     ValidationFailed(String),
     /// Blake3 checksum in the file trailer does not match the computed digest.
     ChecksumMismatch,
@@ -27,6 +30,7 @@ impl fmt::Display for ArcsError {
             ArcsError::CurveIdMismatch { expected, found } => {
                 write!(f, "curve ID mismatch: expected {expected:?}, found {found:?}")
             }
+            ArcsError::ReservedNotZero => write!(f, "reserved header byte must be zero"),
             ArcsError::ValidationFailed(msg) => write!(f, "validation failed: {msg}"),
             ArcsError::ChecksumMismatch => write!(f, "Blake3 checksum mismatch: file is corrupt"),
             ArcsError::FileTooLarge => write!(

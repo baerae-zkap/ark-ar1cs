@@ -75,7 +75,11 @@ impl ArcsHeader {
             return Err(ArcsError::UnsupportedVersion(version));
         }
         let curve_id = CurveId::try_from(meta[1])?;
-        // meta[2] is reserved — ignored
+        // Reserved byte must be zero so each circuit has exactly one canonical
+        // .ar1cs byte sequence (OV-5 #ii).
+        if meta[2] != 0x00 {
+            return Err(ArcsError::ReservedNotZero);
+        }
 
         let mut buf = [0u8; 8];
         macro_rules! read_u64 {
