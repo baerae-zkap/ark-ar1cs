@@ -1,0 +1,26 @@
+[package]
+name = "ark-ar1cs-prover"
+version = "0.1.0"
+edition = "2021"
+description = "Circuit-agnostic Groth16 prover/verifier consuming .arzkey + .arwtns artifacts"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/snp-labs/ark-ar1cs"
+categories = ["cryptography"]
+keywords = ["zk-snark", "groth16", "arkworks", "r1cs"]
+
+[dependencies]
+ark-ar1cs-format = { path = "../ark-ar1cs-format" }
+ark-ar1cs-zkey = { path = "../ark-ar1cs-zkey" }
+ark-ar1cs-wtns = { path = "../ark-ar1cs-wtns" }
+ark-ec = "0.5.0"
+ark-ff = "0.5.0"
+ark-groth16 = "0.5.0"
+ark-relations = "0.5.1"
+ark-serialize = "0.5.0"
+ark-std = "0.5.0"
+thiserror = "2"
+
+[dev-dependencies]
+ark-bn254 = "0.5.0"
+ark-ff = { version = "0.5.0", features = ["std"] }
+rand = "0.8"
