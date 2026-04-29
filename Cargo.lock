@@ -27,6 +27,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
+name = "ark-ar1cs-examples"
+version = "0.1.0"
+dependencies = [
+ "ark-ar1cs-exporter",
+ "ark-ar1cs-format",
+ "ark-ar1cs-importer",
+ "ark-ar1cs-prover",
+ "ark-ar1cs-wtns",
+ "ark-ar1cs-zkey",
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-ec",
+ "ark-ff",
+ "ark-groth16",
+ "ark-relations",
+ "ark-std",
+ "rand 0.8.5",
+]
+
+[[package]]
 name = "ark-ar1cs-exporter"
 version = "0.1.0"
 dependencies = [
