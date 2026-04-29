@@ -76,6 +76,7 @@ dependencies = [
  "ark-ar1cs-test-fixtures",
  "ark-ar1cs-wtns",
  "ark-ar1cs-zkey",
+ "ark-bls12-381",
  "ark-bn254",
  "ark-ec",
  "ark-ff",
