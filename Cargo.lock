@@ -81,6 +81,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-ar1cs-zkey"
+version = "0.1.0"
+dependencies = [
+ "ark-ar1cs-format",
+ "ark-bn254",
+ "ark-ec",
+ "ark-ff",
+ "ark-groth16",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "blake3",
+ "thiserror",
+]
+
+[[package]]
 name = "ark-bls12-381"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
