@@ -73,7 +73,7 @@ sibling format that references this file (`.arzkey.header.ar1cs_blake3`,
 | `CurveIdMismatch { expected, found }` | Caller passed `expected_curve_id` to the importer and the file has a different curve |
 | `ReservedNotZero`        | The reserved header byte is non-zero — the canonical-byte invariant |
 | `ChecksumMismatch`       | Blake3 trailer disagrees with the computed body hash |
-| `FileTooLarge`           | File exceeds `MAX_FILE_BYTES = 256 MiB` |
+| `FileTooLarge`           | File exceeds `MAX_FILE_BYTES = 2 GiB` |
 | `ValidationFailed(String)` | Header counts disagree with matrix dimensions, oversize entry, out-of-bounds column index, or trailing bytes between matrices and trailer (canonical-serialization invariant) |
 | `Serialization(...)`     | Forwarded from `ark_serialize` |
 | `Io(...)`                | Forwarded from `std::io::Error` |
@@ -105,7 +105,7 @@ assert_eq!(parsed, arcs);
 
 ## Limits and security
 
-- `MAX_FILE_BYTES = 256 MiB`. Files at or above the cap return
+- `MAX_FILE_BYTES = 2 GiB`. Files at or above the cap return
   `FileTooLarge` before any parsing.
 - Trailer is a Blake3 hash, not a MAC. It detects accidental corruption
   (bit flips, truncation) but an attacker with write access to the file

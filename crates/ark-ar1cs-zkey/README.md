@@ -39,7 +39,7 @@ consistency checks on read.
 [trailer: 32 bytes]              blake3(header || body)
 ```
 
-`ARZKEY_HEADER_SIZE = 128` and `MAX_ARZKEY_BYTES = 1 GiB` are exported
+`ARZKEY_HEADER_SIZE = 128` and `MAX_ARZKEY_BYTES = 8 GiB` are exported
 constants.
 
 ### Body order
@@ -183,7 +183,7 @@ prefix:
 | `VkBlake3Mismatch`    | `header.vk_blake3 ≠ blake3(vk_section)` |
 | `VkDuplicationDrift`  | `pk.vk ≠ vk_section` after deserialize |
 | `ChecksumMismatch`    | Blake3 trailer disagrees with the computed hash |
-| `FileTooLarge`        | File or any length field exceeds `MAX_ARZKEY_BYTES = 1 GiB` |
+| `FileTooLarge`        | File or any length field exceeds `MAX_ARZKEY_BYTES = 8 GiB` |
 | `TrailingBytes(u64)`  | Bytes remain between the PK section and the trailer |
 | `CountMismatch { field, header, actual }` | Header counts mirror the embedded `.ar1cs` header but disagree |
 | `Format(...)` | Forwarded from `ark_ar1cs_format::ArcsError` |

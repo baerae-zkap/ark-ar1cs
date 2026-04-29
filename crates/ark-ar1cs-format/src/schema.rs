@@ -5,7 +5,7 @@ use std::io::{Cursor, Read, Write};
 /// Files larger than this limit are rejected with [`ArcsError::FileTooLarge`]
 /// before any parsing occurs, preventing unbounded memory allocation from
 /// oversized or adversarial inputs.
-pub const MAX_FILE_BYTES: u64 = 256 * 1024 * 1024; // 256 MB
+pub const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024 * 1024; // 2 GiB
 
 use ark_ff::PrimeField;
 use ark_relations::r1cs::ConstraintMatrices;

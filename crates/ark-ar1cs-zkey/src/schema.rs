@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// Maximum size of an `.arzkey` file accepted by [`ArzkeyFile::read`].
-pub const MAX_ARZKEY_BYTES: u64 = 1024 * 1024 * 1024; // 1 GiB
+pub const MAX_ARZKEY_BYTES: u64 = 8 * 1024 * 1024 * 1024; // 8 GiB
 
 const TRAILER_LEN: usize = 32;
 
