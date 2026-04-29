@@ -4,5 +4,7 @@ members = [
     "crates/ark-ar1cs-exporter",
     "crates/ark-ar1cs-importer",
     "crates/ark-ar1cs-test-fixtures",
+    "crates/ark-ar1cs-wtns",
+    "crates/ark-ar1cs-zkey",
 ]
 resolver = "2"

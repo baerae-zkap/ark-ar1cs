@@ -1,0 +1,25 @@
+[package]
+name = "ark-ar1cs-zkey"
+version = "0.1.0"
+edition = "2021"
+description = "Portable Groth16 setup-output format (.arzkey) — matrices + VK + PK in one file"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/snp-labs/ark-ar1cs"
+categories = ["cryptography"]
+keywords = ["zk-snark", "groth16", "arkworks", "r1cs"]
+
+[dependencies]
+ark-ar1cs-format = { path = "../ark-ar1cs-format" }
+ark-ec = "0.5.0"
+ark-groth16 = "0.5.0"
+ark-serialize = "0.5.0"
+blake3 = "1"
+thiserror = "2"
+
+[dev-dependencies]
+ark-bn254 = "0.5.0"
+ark-ff = { version = "0.5.0", features = ["std"] }
+ark-relations = "0.5.1"
+ark-std = "0.5.0"
+blake3 = "1"
+rand = "0.8"
