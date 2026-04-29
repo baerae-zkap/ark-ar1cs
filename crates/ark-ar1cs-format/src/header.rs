@@ -28,6 +28,8 @@ impl TryFrom<u8> for CurveId {
 /// The fixed-size binary header for an `.ar1cs` file.
 ///
 /// Layout (57 bytes total):
+///
+/// ```text
 ///   magic[6]  version[1]  curve_id[1]  reserved[1]
 ///   num_instance_variables[8 LE]
 ///   num_witness_variables[8 LE]
@@ -35,6 +37,7 @@ impl TryFrom<u8> for CurveId {
 ///   a_non_zero[8 LE]
 ///   b_non_zero[8 LE]
 ///   c_non_zero[8 LE]
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArcsHeader {
     pub version: u8,

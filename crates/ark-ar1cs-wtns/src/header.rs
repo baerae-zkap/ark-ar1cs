@@ -10,8 +10,11 @@ pub const ARWTNS_VERSION_V0: u8 = 0x00;
 /// Fixed `.arwtns` header size in bytes.
 ///
 /// Layout (64 bytes total):
+///
+/// ```text
 ///   magic[6] version[1] curve_id[1] reserved[8]
 ///   ar1cs_blake3[32] num_instance[8 LE] num_witness[8 LE]
+/// ```
 pub const ARWTNS_HEADER_SIZE: usize = 64;
 
 /// The fixed-size binary header for an `.arwtns` file.
