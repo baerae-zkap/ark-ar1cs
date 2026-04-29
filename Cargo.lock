@@ -53,6 +53,7 @@ dependencies = [
  "ark-serialize",
  "ark-std",
  "blake3",
+ "proptest",
 ]
 
 [[package]]
@@ -99,10 +100,12 @@ name = "ark-ar1cs-wtns"
 version = "0.1.0"
 dependencies = [
  "ark-ar1cs-format",
+ "ark-ar1cs-test-fixtures",
  "ark-bn254",
  "ark-ff",
  "ark-serialize",
  "blake3",
+ "proptest",
  "thiserror",
 ]
 
