@@ -40,6 +40,7 @@ dependencies = [
  "ark-ff",
  "ark-groth16",
  "ark-relations",
+ "ark-serialize",
  "ark-std",
  "rand 0.8.5",
 ]
