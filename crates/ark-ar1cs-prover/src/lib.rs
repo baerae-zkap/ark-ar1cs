@@ -15,9 +15,11 @@
 pub mod bind;
 pub mod error;
 pub mod preflight;
+pub mod verifier;
 
 pub use bind::bind_check;
 pub use error::{ArtifactMismatchReason, ProverError};
+pub use verifier::verify;
 
 use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ar1cs_zkey::ArzkeyFile;
