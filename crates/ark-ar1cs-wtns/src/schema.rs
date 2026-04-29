@@ -12,7 +12,7 @@ use crate::{
 ///
 /// Files larger than this are rejected with [`ArwtnsError::FileTooLarge`]
 /// before any parsing or allocation occurs.
-pub const MAX_ARWTNS_BYTES: u64 = 256 * 1024 * 1024; // 256 MiB
+pub const MAX_ARWTNS_BYTES: u64 = 2 * 1024 * 1024 * 1024; // 2 GiB
 
 const TRAILER_LEN: usize = 32;
 

@@ -15,6 +15,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `ark_ar1cs_test_fixtures::*` → `ark_ar1cs_format::test_fixtures::*` (requires
   `features = ["test-fixtures"]`). No behavioral change — example outputs are
   byte-identical to the pre-consolidation build.
+- **Read-size caps raised for production-scale circuits.**
+  `MAX_FILE_BYTES` (`ark-ar1cs-format`) 256 MiB → 2 GiB,
+  `MAX_ARWTNS_BYTES` (`ark-ar1cs-wtns`) 256 MiB → 2 GiB,
+  `MAX_ARZKEY_BYTES` (`ark-ar1cs-zkey`) 1 GiB → 8 GiB. Motivated by JWT-scale
+  circuits (e.g. ~15M-constraint zkap) whose `.ar1cs` is ~317 MiB and whose
+  `ProvingKey<Bn254>` runs into multi-GiB territory. Format bytes are
+  unchanged.
 
 ## [0.1.1] - 2026-04-08
 

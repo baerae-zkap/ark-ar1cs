@@ -104,7 +104,7 @@ to a distinct typed variant — error matching is exact:
 | `CurveMismatch { header, embedded }` | Reserved for future cross-checks |
 | `Ar1csBlake3Mismatch` | Reserved for explicit re-hash checks |
 | `ChecksumMismatch` | Blake3 trailer disagrees with the computed hash |
-| `FileTooLarge` | File or projected body size exceeds `MAX_ARWTNS_BYTES = 256 MiB` |
+| `FileTooLarge` | File or projected body size exceeds `MAX_ARWTNS_BYTES = 2 GiB` |
 | `TrailingBytes(u64)` | Bytes remain between the body and the trailer |
 | `CountMismatch { field, header, actual }` | Header `num_instance`/`num_witness` disagrees with the in-memory vector length |
 | `BodyLengthMismatch { expected, actual }` | `(num_instance + num_witness) × Fr::compressed_size` disagrees with the body bytes between header end and trailer |
