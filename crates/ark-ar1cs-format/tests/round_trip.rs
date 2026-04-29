@@ -136,6 +136,29 @@ fn rejects_unsupported_curve() {
 }
 
 #[test]
+fn rejects_non_zero_reserved_byte() {
+    // Reserved byte sits at offset 8: 6 magic + 1 version + 1 curve_id.
+    let mut header_bytes = Vec::new();
+    ArcsHeader {
+        version: VERSION_V0,
+        curve_id: CurveId::Bn254,
+        num_instance_variables: 2,
+        num_witness_variables: 2,
+        num_constraints: 3,
+        a_non_zero: 3,
+        b_non_zero: 3,
+        c_non_zero: 3,
+    }
+    .write(&mut header_bytes)
+    .unwrap();
+    header_bytes[8] = 0x01;
+
+    let err = ArcsHeader::read(&mut header_bytes.as_slice())
+        .expect_err("should have rejected non-zero reserved byte");
+    assert!(matches!(err, ArcsError::ReservedNotZero), "got: {err}");
+}
+
+#[test]
 fn rejects_unsupported_version() {
     let mut header_bytes = Vec::new();
     ArcsHeader {
