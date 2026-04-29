@@ -78,18 +78,56 @@ impl<F: PrimeField> ArcsFile<F> {
         }
     }
 
-    /// Serialize to `w`, appending a 32-byte Blake3 checksum trailer.
-    pub fn write<W: Write>(&self, w: &mut W) -> Result<(), ArcsError> {
-        // Serialize header + matrices into a local buffer so we can hash them.
+    /// Serialize header + matrices into a byte vector (no trailer appended).
+    ///
+    /// Shared helper between `write` and `body_blake3` so both surface the
+    /// same canonical bytes.
+    fn body_bytes(&self) -> Result<Vec<u8>, ArcsError> {
         let mut body: Vec<u8> = Vec::new();
         self.header.write(&mut body)?;
         write_matrix(&self.a, &mut body)?;
         write_matrix(&self.b, &mut body)?;
         write_matrix(&self.c, &mut body)?;
+        Ok(body)
+    }
 
-        // Compute Blake3 hash of the body and append as trailer.
+    /// Returns the Blake3 hash of the canonical body bytes
+    /// (header + matrix_a + matrix_b + matrix_c, *excluding* the trailer).
+    ///
+    /// Byte-range diagram (relative to the `.ar1cs` file):
+    ///
+    /// ```text
+    /// [0, HEADER_SIZE)            header
+    /// [HEADER_SIZE, A_END)        matrix A   (canonical sort: rows in
+    ///                                          order, (coeff, var_idx)
+    ///                                          within each row sorted
+    ///                                          by var_idx ascending)
+    /// [A_END,        B_END)       matrix B   (same canonical sort)
+    /// [B_END,        C_END)       matrix C   (same canonical sort)
+    /// [C_END,        C_END + 32)  trailer    (Blake3 of [0, C_END));
+    ///                                          NOT included in
+    ///                                          body_blake3()
+    /// ```
+    ///
+    /// The canonical sort is structurally enforced by `write_matrix`. Two
+    /// `ConstraintMatrices` with identical content but reordered
+    /// `(coeff, var_idx)` pairs within a row produce byte-identical
+    /// `.ar1cs` output and therefore identical `body_blake3()` values.
+    ///
+    /// This is the same hash that appears in the file's own trailer and
+    /// must be embedded in any sibling format that references this file
+    /// (`.arzkey`, `.arwtns`).
+    pub fn body_blake3(&self) -> [u8; 32] {
+        let body = self
+            .body_bytes()
+            .expect("serializing a constructed ArcsFile to Vec<u8> cannot fail");
+        *blake3::hash(&body).as_bytes()
+    }
+
+    /// Serialize to `w`, appending a 32-byte Blake3 checksum trailer.
+    pub fn write<W: Write>(&self, w: &mut W) -> Result<(), ArcsError> {
+        let body = self.body_bytes()?;
         let hash = blake3::hash(&body);
-
         w.write_all(&body)?;
         w.write_all(hash.as_bytes())?;
         Ok(())

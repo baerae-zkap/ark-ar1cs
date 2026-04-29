@@ -22,7 +22,15 @@ pub fn write_matrix<F: PrimeField, W: Write>(
     w.write_all(&(matrix.len() as u64).to_le_bytes())?;
     for row in matrix {
         w.write_all(&(row.len() as u64).to_le_bytes())?;
-        for (coeff, var_idx) in row {
+        // Canonical body order: sort (coeff, var_idx) pairs by var_idx ascending
+        // within each row so two ConstraintMatrices with semantically-equal
+        // content but reordered pairs serialize to byte-identical output. The
+        // sort is stable, so equal var_idx entries (which are R1CS-invalid
+        // anyway) preserve input order. See ArcsFile::body_blake3 for the
+        // canonical body definition.
+        let mut sorted: Vec<&(F, usize)> = row.iter().collect();
+        sorted.sort_by_key(|(_, var_idx)| *var_idx);
+        for (coeff, var_idx) in sorted {
             coeff.serialize_compressed(&mut *w)?;
             w.write_all(&(*var_idx as u64).to_le_bytes())?;
         }
