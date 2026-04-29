@@ -1,7 +1,7 @@
 /// Importer tests: replay, curve-ID guard, and edge cases.
+use ark_ar1cs_format::importer::ImportedCircuit;
+use ark_ar1cs_format::test_fixtures::make_test_matrices;
 use ark_ar1cs_format::{ArcsError, ArcsFile, CurveId};
-use ark_ar1cs_importer::ImportedCircuit;
-use ark_ar1cs_test_fixtures::make_test_matrices;
 use ark_bn254::Fr;
 use ark_relations::r1cs::{ConstraintMatrices, ConstraintSystem, ConstraintSynthesizer};
 

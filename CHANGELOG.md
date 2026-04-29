@@ -3,6 +3,19 @@
 All notable changes to the ark-ar1cs workspace are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Changed
+- **Workspace consolidated from 8 crates to 5.** `ark-ar1cs-importer`,
+  `ark-ar1cs-exporter`, and `ark-ar1cs-test-fixtures` were absorbed into
+  `ark-ar1cs-format` as `format::importer`, `format::exporter`, and the
+  feature-gated `format::test_fixtures` module respectively. Import paths:
+  `ark_ar1cs_importer::ImportedCircuit` → `ark_ar1cs_format::importer::ImportedCircuit`,
+  `ark_ar1cs_exporter::export_circuit` → `ark_ar1cs_format::exporter::export_circuit`,
+  `ark_ar1cs_test_fixtures::*` → `ark_ar1cs_format::test_fixtures::*` (requires
+  `features = ["test-fixtures"]`). No behavioral change — example outputs are
+  byte-identical to the pre-consolidation build.
+
 ## [0.1.1] - 2026-04-08
 
 ### Added

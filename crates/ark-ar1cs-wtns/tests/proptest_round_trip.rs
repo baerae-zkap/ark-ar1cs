@@ -8,14 +8,14 @@
 //!
 //! Runs at ≥1000 iterations under `cargo test --release` (OV-5 #iv).
 //! Reuses the bounded `arb_matrices_with_assignment` strategy from
-//! `ark-ar1cs-test-fixtures`: `z = [F::ONE, instance..., witness...]` is
-//! split into `(instance, witness)` so the witness vector lengths follow
+//! `ark_ar1cs_format::test_fixtures`: `z = [F::ONE, instance..., witness...]`
+//! is split into `(instance, witness)` so the witness vector lengths follow
 //! the same hard bounds as the format/prover proptests.
 
 #![cfg(not(target_arch = "wasm32"))]
 
+use ark_ar1cs_format::test_fixtures::arb_matrices_with_assignment;
 use ark_ar1cs_format::CurveId;
-use ark_ar1cs_test_fixtures::arb_matrices_with_assignment;
 use ark_ar1cs_wtns::ArwtnsFile;
 use ark_bn254::Fr;
 use proptest::prelude::*;

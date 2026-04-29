@@ -10,7 +10,7 @@
 //! `.arwtns` byte artifacts handed off across component boundaries):
 //!
 //! 1. **Export** — synthesize a `ConstraintSynthesizer` and write
-//!    `.ar1cs` bytes via `ark-ar1cs-exporter::export_circuit`.
+//!    `.ar1cs` bytes via `ark_ar1cs_format::exporter::export_circuit`.
 //! 2. **Setup** — re-import the bytes as an `ImportedCircuit`
 //!    (no original Rust circuit needed) and run
 //!    `Groth16::generate_random_parameters_with_reduction` to produce
@@ -30,9 +30,9 @@
 
 use std::error::Error;
 
-use ark_ar1cs_exporter::export_circuit;
+use ark_ar1cs_format::exporter::export_circuit;
+use ark_ar1cs_format::importer::ImportedCircuit;
 use ark_ar1cs_format::{ArcsFile, CurveId};
-use ark_ar1cs_importer::ImportedCircuit;
 use ark_ar1cs_prover::{prove, verify};
 use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ar1cs_zkey::ArzkeyFile;

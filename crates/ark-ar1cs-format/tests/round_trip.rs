@@ -3,8 +3,8 @@
 /// Circuit fixture: x * 1 = x
 ///   Variables: [1(implicit), x(pub), w1(witness), w2(witness)]
 ///   num_instance_variables=2, num_witness_variables=2, num_constraints=3
+use ark_ar1cs_format::test_fixtures::make_test_matrices;
 use ark_ar1cs_format::{ArcsError, ArcsFile, ArcsHeader, CurveId, VERSION_V0};
-use ark_ar1cs_test_fixtures::make_test_matrices;
 use ark_bls12_381::Fr as BlsFr;
 use ark_bn254::Fr;
 use ark_relations::r1cs::ConstraintMatrices;

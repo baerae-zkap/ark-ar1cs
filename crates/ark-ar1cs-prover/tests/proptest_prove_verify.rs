@@ -20,10 +20,10 @@
 
 #![cfg(not(target_arch = "wasm32"))]
 
+use ark_ar1cs_format::importer::ImportedCircuit;
+use ark_ar1cs_format::test_fixtures::arb_matrices_with_assignment;
 use ark_ar1cs_format::{ArcsFile, CurveId};
-use ark_ar1cs_importer::ImportedCircuit;
 use ark_ar1cs_prover::{prove, verify};
-use ark_ar1cs_test_fixtures::arb_matrices_with_assignment;
 use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ar1cs_zkey::ArzkeyFile;
 use ark_bn254::{Bn254, Fr};
