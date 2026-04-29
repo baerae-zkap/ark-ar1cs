@@ -72,6 +72,8 @@ name = "ark-ar1cs-prover"
 version = "0.1.0"
 dependencies = [
  "ark-ar1cs-format",
+ "ark-ar1cs-importer",
+ "ark-ar1cs-test-fixtures",
  "ark-ar1cs-wtns",
  "ark-ar1cs-zkey",
  "ark-bn254",
@@ -81,6 +83,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "proptest",
  "rand 0.8.5",
  "thiserror",
 ]
