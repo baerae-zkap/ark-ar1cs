@@ -14,7 +14,7 @@
 
 #![cfg(not(target_arch = "wasm32"))]
 
-use ark_ar1cs_test_fixtures::{
+use ark_ar1cs_format::test_fixtures::{
     arb_matrices_with_assignment, PROPTEST_MAX_CONSTRAINTS, PROPTEST_MAX_NONZEROS_PER_MATRIX,
 };
 use ark_bn254::Fr;

@@ -22,19 +22,20 @@ the circuit code. ark-ar1cs cuts the coupling: every step after
 ## Project surface
 
 The project surface is exactly **four core crates** producing **three
-artifact formats**.
+artifact formats**, plus a runnable examples crate.
 
 | Crate | Artifact | Role |
 |-------|----------|------|
-| [`ark-ar1cs-format`](crates/ark-ar1cs-format) | `.ar1cs` | Frozen R1CS matrices |
+| [`ark-ar1cs-format`](crates/ark-ar1cs-format) | `.ar1cs` | Frozen R1CS matrices + `exporter`/`importer` modules |
 | [`ark-ar1cs-zkey`](crates/ark-ar1cs-zkey)     | `.arzkey` | Setup output (matrices + VK + PK) |
 | [`ark-ar1cs-wtns`](crates/ark-ar1cs-wtns)     | `.arwtns` | One witness assignment |
 | [`ark-ar1cs-prover`](crates/ark-ar1cs-prover) | `Proof<E>` | `prove(.arzkey, .arwtns) → Proof` |
+| [`ark-ar1cs-examples`](crates/ark-ar1cs-examples) | – | Runnable end-to-end workflows |
 
-Three workflow adapters sit beside the surface: `ark-ar1cs-exporter`
-(synthesize → `.ar1cs`), `ark-ar1cs-importer` (`.ar1cs` →
-`ConstraintSynthesizer`), and `ark-ar1cs-test-fixtures` (shared test
-matrices). They are useful but not part of the stable surface.
+The `format` crate exposes two workflow adapter modules — `format::exporter`
+(synthesize → `.ar1cs`) and `format::importer` (`.ar1cs` → arkworks
+`ConstraintSynthesizer`) — and an opt-in `test_fixtures` module gated
+behind the `test-fixtures` feature for shared property-test fixtures.
 
 ## Core principles
 
@@ -59,9 +60,9 @@ matrices). They are useful but not part of the stable surface.
 ## Quick example
 
 ```rust
-use ark_ar1cs_exporter::export_circuit;
+use ark_ar1cs_format::exporter::export_circuit;
+use ark_ar1cs_format::importer::ImportedCircuit;
 use ark_ar1cs_format::{ArcsFile, CurveId};
-use ark_ar1cs_importer::ImportedCircuit;
 use ark_ar1cs_prover::{prove, verify};
 use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ar1cs_zkey::ArzkeyFile;

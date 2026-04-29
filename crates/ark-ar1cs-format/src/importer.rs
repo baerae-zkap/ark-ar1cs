@@ -1,12 +1,11 @@
-#![deny(unsafe_code)]
-
 use std::io::Read;
 
-use ark_ar1cs_format::{ArcsError, ArcsFile, CurveId};
 use ark_ff::PrimeField;
 use ark_relations::r1cs::{
     ConstraintSynthesizer, ConstraintSystemRef, LinearCombination, SynthesisError, Variable,
 };
+
+use crate::{ArcsError, ArcsFile, CurveId};
 
 /// A Groth16 circuit reconstructed from an `.ar1cs` file.
 ///

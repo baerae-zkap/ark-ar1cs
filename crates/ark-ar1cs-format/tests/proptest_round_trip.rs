@@ -12,8 +12,8 @@
 
 #![cfg(not(target_arch = "wasm32"))]
 
+use ark_ar1cs_format::test_fixtures::arb_matrices_with_assignment;
 use ark_ar1cs_format::{ArcsFile, CurveId};
-use ark_ar1cs_test_fixtures::arb_matrices_with_assignment;
 use ark_bn254::Fr;
 use proptest::prelude::*;
 

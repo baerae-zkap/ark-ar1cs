@@ -30,9 +30,7 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 name = "ark-ar1cs-examples"
 version = "0.1.0"
 dependencies = [
- "ark-ar1cs-exporter",
  "ark-ar1cs-format",
- "ark-ar1cs-importer",
  "ark-ar1cs-prover",
  "ark-ar1cs-wtns",
  "ark-ar1cs-zkey",
@@ -47,44 +45,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "ark-ar1cs-exporter"
+name = "ark-ar1cs-format"
 version = "0.1.0"
 dependencies = [
  "ark-ar1cs-format",
- "ark-ar1cs-importer",
+ "ark-bls12-381",
  "ark-bn254",
  "ark-ec",
  "ark-ff",
  "ark-groth16",
  "ark-relations",
- "ark-std",
- "rand 0.8.5",
-]
-
-[[package]]
-name = "ark-ar1cs-format"
-version = "0.1.0"
-dependencies = [
- "ark-ar1cs-test-fixtures",
- "ark-bls12-381",
- "ark-bn254",
- "ark-ff",
- "ark-relations",
  "ark-serialize",
  "ark-std",
  "blake3",
  "proptest",
-]
-
-[[package]]
-name = "ark-ar1cs-importer"
-version = "0.1.0"
-dependencies = [
- "ark-ar1cs-format",
- "ark-ar1cs-test-fixtures",
- "ark-bn254",
- "ark-ff",
- "ark-relations",
+ "rand 0.8.5",
 ]
 
 [[package]]
@@ -92,8 +67,6 @@ name = "ark-ar1cs-prover"
 version = "0.1.0"
 dependencies = [
  "ark-ar1cs-format",
- "ark-ar1cs-importer",
- "ark-ar1cs-test-fixtures",
  "ark-ar1cs-wtns",
  "ark-ar1cs-zkey",
  "ark-bls12-381",
@@ -110,21 +83,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "ark-ar1cs-test-fixtures"
-version = "0.1.0"
-dependencies = [
- "ark-bn254",
- "ark-ff",
- "ark-relations",
- "proptest",
-]
-
-[[package]]
 name = "ark-ar1cs-wtns"
 version = "0.1.0"
 dependencies = [
  "ark-ar1cs-format",
- "ark-ar1cs-test-fixtures",
  "ark-bn254",
  "ark-ff",
  "ark-serialize",

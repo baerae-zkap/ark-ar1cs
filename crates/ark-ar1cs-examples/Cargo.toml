@@ -9,8 +9,6 @@ publish = false
 
 [dependencies]
 ark-ar1cs-format = { path = "../ark-ar1cs-format" }
-ark-ar1cs-exporter = { path = "../ark-ar1cs-exporter" }
-ark-ar1cs-importer = { path = "../ark-ar1cs-importer" }
 ark-ar1cs-zkey = { path = "../ark-ar1cs-zkey" }
 ark-ar1cs-wtns = { path = "../ark-ar1cs-wtns" }
 ark-ar1cs-prover = { path = "../ark-ar1cs-prover" }

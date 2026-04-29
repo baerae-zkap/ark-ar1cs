@@ -1,12 +1,11 @@
-#![deny(unsafe_code)]
-
 use std::io::Write;
 
-use ark_ar1cs_format::{ArcsError, ArcsFile, CurveId};
 use ark_ff::PrimeField;
 use ark_relations::r1cs::{
     ConstraintSynthesizer, ConstraintSystem, OptimizationGoal, SynthesisError, SynthesisMode,
 };
+
+use crate::{ArcsError, ArcsFile, CurveId};
 
 #[derive(Debug)]
 pub enum ExportError {

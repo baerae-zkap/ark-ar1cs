@@ -117,13 +117,25 @@ assert_eq!(parsed, arcs);
   verifying keys live in `.arzkey` (see
   [`ark-ar1cs-zkey`](../ark-ar1cs-zkey)).
 
-## See also
+## Adapters
 
-- [`ark-ar1cs-exporter`](../ark-ar1cs-exporter) — synthesize a circuit and
-  write `.ar1cs`.
-- [`ark-ar1cs-importer`](../ark-ar1cs-importer) — read `.ar1cs` as a
+The `exporter` and `importer` workflow adapters live as modules inside
+this crate (no extra dependency to declare beyond `ark-ar1cs-format`):
+
+- `ark_ar1cs_format::exporter::export_circuit` — synthesize a circuit
+  in setup mode and write `.ar1cs` bytes in one call.
+- `ark_ar1cs_format::importer::ImportedCircuit` — read `.ar1cs` as a
   `ConstraintSynthesizer` (takes `expected_curve_id` and rejects
   `CurveIdMismatch`).
+
+Shared property-test fixtures (`make_test_matrices`,
+`arb_matrices_with_assignment`) live under
+`ark_ar1cs_format::test_fixtures::*` and are gated behind the optional
+`test-fixtures` feature so default builds (and wasm32 builds) stay
+proptest-free.
+
+## See also
+
 - [Repository root](../../README.md) — workspace overview, format envelope, three core principles.
 
 ## License
