@@ -126,6 +126,7 @@ dependencies = [
  "ark-std",
  "blake3",
  "rand 0.8.5",
+ "tempfile",
  "thiserror",
 ]
 
