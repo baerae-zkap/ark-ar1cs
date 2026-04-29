@@ -1,3 +1,21 @@
+//! Test fixtures shared across the ark-ar1cs workspace.
+//!
+//! - [`make_test_matrices`] — deterministic 3-constraint BN254 R1CS used by
+//!   the negative-test suites in `format`, `wtns`, and `zkey`.
+//! - [`arb_matrices_with_assignment`] — bounded `proptest` strategy that
+//!   yields R1CS-satisfying `(matrices, full_assignment)` pairs by
+//!   construction, used by the Phase D property tests in `format`, `wtns`,
+//!   and `prover`. Native-only (gated `cfg(not(target_arch = "wasm32"))`)
+//!   so the crate's wasm32 build stays clean per OV-4.
+
+#[cfg(not(target_arch = "wasm32"))]
+mod proptest_gen;
+#[cfg(not(target_arch = "wasm32"))]
+pub use proptest_gen::{
+    arb_matrices_with_assignment, MatricesWithAssignment, PROPTEST_MAX_CONSTRAINTS,
+    PROPTEST_MAX_NONZEROS_PER_MATRIX,
+};
+
 /// Shared test fixture: 3-constraint R1CS for BN254.
 ///
 /// Variables: [1(implicit), x(pub), w1(witness), w2(witness)]
