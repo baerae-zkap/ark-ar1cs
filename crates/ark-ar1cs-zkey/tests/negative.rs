@@ -107,13 +107,17 @@ fn rejects_bad_magic() {
 
 #[test]
 fn rejects_unsupported_version() {
+    // The current writer emits V1 (0x01); V0 (0x00) is hard-rejected
+    // because its body is compressed and does not deserialize through the
+    // V1 uncompressed reader. Overwrite the version byte with V0 to
+    // exercise the rejection path.
     let mut buf = make_valid_file_bytes();
-    buf[VERSION_OFFSET] = 0x01;
+    buf[VERSION_OFFSET] = 0x00;
     recompute_trailer(&mut buf);
     let err =
         ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected UnsupportedVersion");
     assert!(
-        matches!(err, ArzkeyError::UnsupportedVersion(0x01)),
+        matches!(err, ArzkeyError::UnsupportedVersion(0x00)),
         "got: {err:?}"
     );
 }
@@ -257,8 +261,11 @@ fn rejects_vk_duplication_drift() {
     .unwrap();
     assert_ne!(pk2.vk, arzkey1.vk, "two ceremonies must produce distinct VKs");
 
+    // The V1 writer emits PK uncompressed; the byte-level swap below
+    // therefore needs an uncompressed PK encoding so pk_byte_len in the
+    // header still matches the swapped payload length.
     let mut pk2_bytes = Vec::new();
-    pk2.serialize_compressed(&mut pk2_bytes).unwrap();
+    pk2.serialize_uncompressed(&mut pk2_bytes).unwrap();
 
     let ar1cs_byte_len = read_u64_le(&buf, AR1CS_BYTE_LEN_OFFSET);
     let vk_byte_len = read_u64_le(&buf, VK_BYTE_LEN_OFFSET);

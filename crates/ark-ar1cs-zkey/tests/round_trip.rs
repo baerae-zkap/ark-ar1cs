@@ -117,9 +117,11 @@ fn vk_extraction_via_serialize_compressed() {
     let arcs = extract_arcs();
     let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
 
-    // CQ-1 — no write_vk_only helper. Raw VK bytes come from one line:
+    // CQ-1 — no write_vk_only helper. Raw VK bytes come from one line.
+    // V1 envelope writes vk uncompressed, so the comparison against
+    // header.vk_byte_len uses the uncompressed encoding.
     let mut vk_bytes = Vec::new();
-    arzkey.vk().serialize_compressed(&mut vk_bytes).unwrap();
+    arzkey.vk().serialize_uncompressed(&mut vk_bytes).unwrap();
     assert_eq!(
         vk_bytes.len() as u64,
         arzkey.header.vk_byte_len,

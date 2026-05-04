@@ -7,7 +7,7 @@ use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 
 use crate::{
     error::ArzkeyError,
-    header::{ArzkeyHeader, ARZKEY_HEADER_SIZE, ARZKEY_VERSION_V0},
+    header::{ArzkeyHeader, ARZKEY_HEADER_SIZE, ARZKEY_VERSION_CURRENT},
 };
 
 /// Maximum size of an `.arzkey` file accepted by [`ArzkeyFile::read`].
@@ -48,16 +48,16 @@ impl<E: Pairing> ArzkeyFile<E> {
         let ar1cs_byte_len = arcs_bytes.len() as u64;
 
         let vk = pk.vk.clone();
-        let vk_byte_len = vk.compressed_size() as u64;
+        let vk_byte_len = vk.uncompressed_size() as u64;
         let mut vk_bytes = Vec::with_capacity(vk_byte_len as usize);
-        vk.serialize_compressed(&mut vk_bytes)
+        vk.serialize_uncompressed(&mut vk_bytes)
             .expect("VerifyingKey serialize to Vec cannot fail");
         let vk_blake3 = *blake3::hash(&vk_bytes).as_bytes();
 
-        let pk_byte_len = pk.compressed_size() as u64;
+        let pk_byte_len = pk.uncompressed_size() as u64;
 
         let header = ArzkeyHeader {
-            version: ARZKEY_VERSION_V0,
+            version: ARZKEY_VERSION_CURRENT,
             curve_id,
             ar1cs_blake3,
             vk_blake3,
@@ -93,8 +93,8 @@ impl<E: Pairing> ArzkeyFile<E> {
         let mut body = Vec::new();
         self.header.write(&mut body)?;
         self.arcs.write(&mut body)?;
-        self.vk.serialize_compressed(&mut body)?;
-        self.pk.serialize_compressed(&mut body)?;
+        self.vk.serialize_uncompressed(&mut body)?;
+        self.pk.serialize_uncompressed(&mut body)?;
         Ok(body)
     }
 
@@ -217,7 +217,13 @@ impl<E: Pairing> ArzkeyFile<E> {
             return Err(ArzkeyError::VkBlake3Mismatch);
         }
         let mut vk_reader: &[u8] = vk_section;
-        let vk = VerifyingKey::<E>::deserialize_compressed(&mut vk_reader)?;
+        // Default: validate every curve point. With `fast-prove`, skip — the
+        // blake3 trailer + per-section blake3 + signed manifest are expected
+        // to provide sufficient integrity for a trusted setup output.
+        #[cfg(not(feature = "fast-prove"))]
+        let vk = VerifyingKey::<E>::deserialize_uncompressed(&mut vk_reader)?;
+        #[cfg(feature = "fast-prove")]
+        let vk = VerifyingKey::<E>::deserialize_uncompressed_unchecked(&mut vk_reader)?;
         if !vk_reader.is_empty() {
             return Err(ArzkeyError::VkLengthMismatch {
                 header: header.vk_byte_len,
@@ -236,7 +242,10 @@ impl<E: Pairing> ArzkeyFile<E> {
         let pk_end = vk_end + header.pk_byte_len as usize;
         let pk_section = &body[vk_end..pk_end];
         let mut pk_reader: &[u8] = pk_section;
-        let pk = ProvingKey::<E>::deserialize_compressed(&mut pk_reader)?;
+        #[cfg(not(feature = "fast-prove"))]
+        let pk = ProvingKey::<E>::deserialize_uncompressed(&mut pk_reader)?;
+        #[cfg(feature = "fast-prove")]
+        let pk = ProvingKey::<E>::deserialize_uncompressed_unchecked(&mut pk_reader)?;
         if !pk_reader.is_empty() {
             return Err(ArzkeyError::PkLengthMismatch {
                 header: header.pk_byte_len,
