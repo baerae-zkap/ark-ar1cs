@@ -35,6 +35,7 @@ use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem};
 
 pub use abi::WitnessAbiCode;
 pub use error::WitnessError;
+pub use macros::witness_generator_native;
 
 /// Trait every wasm witness-generator implements.
 ///
