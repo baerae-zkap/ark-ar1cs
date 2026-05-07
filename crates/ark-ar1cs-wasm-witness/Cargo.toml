@@ -8,6 +8,14 @@ repository = "https://github.com/snp-labs/ark-ar1cs"
 categories = ["cryptography", "wasm"]
 keywords = ["zk-snark", "groth16", "arkworks", "r1cs", "wasm"]
 
+[features]
+# Exposes `pub mod mock` (small `MockCircuit` + 2^20-class `LargeMockCircuit`
+# fixtures + their `WitnessGenerator` impls) to downstream test fixtures and
+# the wasm32 smoke / benchmark crates. Pulls ark-bn254 as a non-dev dep so
+# `cargo build -p some-fixture` (where this crate is a regular dependency,
+# not a dev-dependency) still resolves the field type.
+test-mock = ["dep:ark-bn254"]
+
 [dependencies]
 ark-ar1cs-format = { path = "../ark-ar1cs-format" }
 ark-ar1cs-wtns = { path = "../ark-ar1cs-wtns" }
@@ -16,6 +24,9 @@ ark-relations = "0.5.1"
 postcard = { version = "1", default-features = false, features = ["alloc"] }
 serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
 thiserror = "2"
+# Only pulled in when `test-mock` is enabled. Used by the `mock` module's
+# concrete BN254 fixtures.
+ark-bn254 = { version = "0.5.0", optional = true }
 
 [dev-dependencies]
 ark-bn254 = "0.5.0"

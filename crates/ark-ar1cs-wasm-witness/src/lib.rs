@@ -21,6 +21,8 @@ extern crate alloc;
 pub mod abi;
 pub mod error;
 pub mod macros;
+#[cfg(any(test, feature = "test-mock"))]
+pub mod mock;
 pub mod packed;
 
 #[doc(hidden)]
@@ -123,34 +125,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mock::MockCircuit;
     use ark_bn254::Fr;
-    use ark_relations::r1cs::{ConstraintSystemRef, LinearCombination, SynthesisError};
-
-    /// Toy circuit: enforces `x * y == z` where `(x, y)` is the witness and
-    /// `z` is a single public input.
-    #[derive(Clone)]
-    struct MockCircuit<F: PrimeField> {
-        x: F,
-        y: F,
-        z: F,
-    }
-
-    impl<F: PrimeField> ConstraintSynthesizer<F> for MockCircuit<F> {
-        fn generate_constraints(
-            self,
-            cs: ConstraintSystemRef<F>,
-        ) -> Result<(), SynthesisError> {
-            let z = cs.new_input_variable(|| Ok(self.z))?;
-            let x = cs.new_witness_variable(|| Ok(self.x))?;
-            let y = cs.new_witness_variable(|| Ok(self.y))?;
-            cs.enforce_constraint(
-                LinearCombination::from(x),
-                LinearCombination::from(y),
-                LinearCombination::from(z),
-            )?;
-            Ok(())
-        }
-    }
 
     #[test]
     fn circuit_to_arwtns_matches_assignments() {
