@@ -272,4 +272,40 @@ mod tests {
         });
         assert!(err.is_err());
     }
+
+    /// End-to-end native path: postcard → witness_generator_native → arwtns
+    /// round-trip. Mirrors what the wasm fixture does at runtime, but on
+    /// the host. Tiny depth keeps the test fast.
+    #[test]
+    fn large_generator_native_path_round_trips() {
+        use crate::macros::witness_generator_native;
+        use ark_ar1cs_wtns::ArwtnsFile;
+
+        let depth: u32 = 4;
+        let n: usize = 1usize << depth;
+        let input = LargeMockInput { seed: 3, depth };
+        let bytes = postcard::to_allocvec(&input).unwrap();
+        let arwtns_bytes = witness_generator_native::<LargeMockGenerator>(
+            &bytes,
+            &EMBEDDED_LARGE_AR1CS_BLAKE3,
+            &EMBEDDED_LARGE_AR1CS_BLAKE3,
+        )
+        .expect("native witness gen failed");
+
+        let mut cur = std::io::Cursor::new(&arwtns_bytes);
+        let arwtns: ArwtnsFile<Fr> =
+            ArwtnsFile::read(&mut cur).expect("arwtns read failed");
+
+        assert_eq!(arwtns.witness.len(), n);
+        assert_eq!(arwtns.instance.len(), 1);
+        assert_eq!(arwtns.header.ar1cs_blake3, EMBEDDED_LARGE_AR1CS_BLAKE3);
+        // x_0 == seed
+        assert_eq!(arwtns.witness[0], Fr::from(3u64));
+        // x_N (instance) == seed^(2^N)
+        let mut expected = Fr::from(3u64);
+        for _ in 0..n {
+            expected = expected.square();
+        }
+        assert_eq!(arwtns.instance[0], expected);
+    }
 }

@@ -727,6 +727,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "large-witness-fixture"
+version = "0.0.0"
+dependencies = [
+ "ark-ar1cs-format",
+ "ark-ar1cs-wasm-witness",
+ "ark-bn254",
+ "ark-ff",
+ "ark-relations",
+ "postcard",
+ "serde",
+]
+
+[[package]]
 name = "leb128fmt"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
