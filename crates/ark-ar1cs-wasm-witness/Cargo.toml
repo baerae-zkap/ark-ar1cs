@@ -44,3 +44,11 @@ required-features = ["test-mock"]
 [[example]]
 name = "native_mem_2pow20"
 required-features = ["test-mock"]
+
+[[example]]
+name = "encode_input"
+required-features = ["test-mock"]
+
+[[example]]
+name = "native_dump_arwtns"
+required-features = ["test-mock"]
