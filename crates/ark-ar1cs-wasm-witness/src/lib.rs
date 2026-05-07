@@ -31,7 +31,7 @@ pub mod ark_ar1cs_format_reexport {
 use ark_ar1cs_format::CurveId;
 use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ff::PrimeField;
-use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem};
+use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem, SynthesisMode};
 
 pub use abi::WitnessAbiCode;
 pub use error::WitnessError;
@@ -71,18 +71,22 @@ pub trait WitnessGenerator {
 /// Synthesize `circuit` into a `.arwtns` blob.
 ///
 /// Steps:
-/// 1. allocate a fresh `ConstraintSystem<F>`,
+/// 1. allocate a fresh `ConstraintSystem<F>` and switch it to
+///    `SynthesisMode::Prove { construct_matrices: false }`,
 /// 2. call `circuit.generate_constraints(cs)` (drives every witness callback),
 /// 3. read `instance_assignment[1..]` (skip the implicit `1` wire) and
 ///    `witness_assignment` from the constraint system,
 /// 4. wrap them in an [`ArwtnsFile`] with the supplied `curve_id` and
 ///    `ar1cs_blake3` binding.
 ///
-/// The constraint system stays in the default `Prove` synthesis mode so that
-/// witness assignments are tracked. `cs.finalize()` is intentionally NOT
-/// called here — finalize() is a setup-time concern that turns linear
-/// combinations into matrix rows; for witness extraction the per-variable
-/// assignments are already populated as constraints are enforced.
+/// `construct_matrices: false` skips A/B/C row accumulation in
+/// `enforce_constraint` (we never read those rows here — they live in
+/// `.arzkey` already). Witness/instance assignments are still populated
+/// because the mode is `Prove`, not `Setup` (arkworks 0.5.1
+/// `constraint_system.rs:234` gates assignment-push on
+/// `!is_in_setup_mode()`). `cs.finalize()` is intentionally NOT called —
+/// finalize() turns linear combinations into matrix rows, which is a
+/// setup-time concern.
 pub fn circuit_to_arwtns<F, C>(
     circuit: C,
     curve_id: CurveId,
@@ -93,6 +97,9 @@ where
     C: ConstraintSynthesizer<F>,
 {
     let cs = ConstraintSystem::<F>::new_ref();
+    cs.set_mode(SynthesisMode::Prove {
+        construct_matrices: false,
+    });
     circuit
         .generate_constraints(cs.clone())
         .map_err(WitnessError::Synthesis)?;
@@ -164,6 +171,51 @@ mod tests {
         assert_eq!(arwtns.witness, alloc::vec![x, y]);
         assert_eq!(arwtns.header.num_instance, 1);
         assert_eq!(arwtns.header.num_witness, 2);
+    }
+
+    /// Regression guard for the witness-only `SynthesisMode` change.
+    ///
+    /// We previously left the cs in default `Prove { construct_matrices: true }`
+    /// mode, which accumulates A/B/C rows we never read. Now we flip to
+    /// `construct_matrices: false`. The .arwtns output (which only depends on
+    /// `instance_assignment` and `witness_assignment`) MUST be identical.
+    #[test]
+    fn circuit_to_arwtns_byte_identical_to_default_prove_mode() {
+        use ark_relations::r1cs::SynthesisMode;
+
+        let x = Fr::from(13u64);
+        let y = Fr::from(17u64);
+        let z = x * y;
+        let blake3 = [0x55u8; 32];
+
+        // Path under test: circuit_to_arwtns with construct_matrices=false (current code).
+        let arwtns_witness_only = circuit_to_arwtns(
+            MockCircuit { x, y, z },
+            CurveId::Bn254,
+            blake3,
+        )
+        .unwrap();
+
+        // Reference path: open-coded with default construct_matrices=true.
+        let cs = ConstraintSystem::<Fr>::new_ref();
+        cs.set_mode(SynthesisMode::Prove { construct_matrices: true });
+        MockCircuit { x, y, z }.generate_constraints(cs.clone()).unwrap();
+        let cs_inner = cs.borrow().unwrap();
+        let instance: alloc::vec::Vec<Fr> = cs_inner.instance_assignment[1..].to_vec();
+        let witness: alloc::vec::Vec<Fr> = cs_inner.witness_assignment.clone();
+        drop(cs_inner);
+        let arwtns_full = ArwtnsFile::from_assignments(
+            CurveId::Bn254, blake3, &instance, &witness,
+        );
+
+        assert_eq!(arwtns_witness_only, arwtns_full);
+
+        // Also serialize both — bytes must match.
+        let mut a = alloc::vec::Vec::new();
+        let mut b = alloc::vec::Vec::new();
+        arwtns_witness_only.write(&mut a).unwrap();
+        arwtns_full.write(&mut b).unwrap();
+        assert_eq!(a, b);
     }
 
     #[test]
