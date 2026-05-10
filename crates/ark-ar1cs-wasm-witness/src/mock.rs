@@ -167,8 +167,7 @@ impl ConstraintSynthesizer<Fr> for LargeMockCircuit {
 
         // Allocate N witness variables for x_0 .. x_{N-1}.
         let mut witness_vars = Vec::with_capacity(n as usize);
-        for i in 0..n as usize {
-            let v = values[i];
+        for &v in values.iter().take(n as usize) {
             let var = cs.new_witness_variable(move || Ok(v))?;
             witness_vars.push(var);
         }
