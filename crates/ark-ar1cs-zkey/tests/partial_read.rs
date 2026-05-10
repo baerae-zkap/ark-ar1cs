@@ -153,8 +153,10 @@ fn partial_read_vk_from_disk(path: &Path) -> VerifyingKey<Bn254> {
         "OV-3: vk_blake3 must authenticate the VK section before deserialize"
     );
 
-    VerifyingKey::<Bn254>::deserialize_compressed(&mut &vk_section[..])
-        .expect("VerifyingKey::deserialize_compressed on authenticated bytes")
+    // V1 .arzkey writes vk uncompressed; the partial-read consumer must
+    // deserialize the same shape it was written in.
+    VerifyingKey::<Bn254>::deserialize_uncompressed(&mut &vk_section[..])
+        .expect("VerifyingKey::deserialize_uncompressed on authenticated bytes")
 }
 
 fn write_arzkey_to_tempfile(arzkey: &ArzkeyFile<Bn254>) -> NamedTempFile {

@@ -5,7 +5,14 @@ use ark_ar1cs_format::CurveId;
 use crate::error::ArzkeyError;
 
 pub const ARZKEY_MAGIC: &[u8; 6] = b"ARZKEY";
+/// V0 = compressed VK + compressed PK body sections (deprecated).
 pub const ARZKEY_VERSION_V0: u8 = 0x00;
+/// V1 = uncompressed VK + uncompressed PK. Same blake3 + section layout as
+/// V0; only the per-section serialization changes. V0 files are rejected on
+/// read (the body bytes do not deserialize into uncompressed elements).
+pub const ARZKEY_VERSION_V1: u8 = 0x01;
+/// Current writer always emits V1.
+pub const ARZKEY_VERSION_CURRENT: u8 = ARZKEY_VERSION_V1;
 
 /// Fixed `.arzkey` header size in bytes.
 ///
@@ -67,7 +74,7 @@ impl ArzkeyHeader {
         let mut vc = [0u8; 2];
         r.read_exact(&mut vc)?;
         let version = vc[0];
-        if version != ARZKEY_VERSION_V0 {
+        if version != ARZKEY_VERSION_CURRENT {
             return Err(ArzkeyError::UnsupportedVersion(version));
         }
         let curve_id = CurveId::try_from(vc[1])?;
