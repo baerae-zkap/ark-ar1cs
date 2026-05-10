@@ -3,6 +3,8 @@ members = [
     "crates/ark-ar1cs-examples",
     "crates/ark-ar1cs-format",
     "crates/ark-ar1cs-prover",
+    "crates/ark-ar1cs-wasm-witness",
+    "crates/ark-ar1cs-wasm-witness/tests/fixtures/large-witness-fixture",
     "crates/ark-ar1cs-wtns",
     "crates/ark-ar1cs-zkey",
 ]
