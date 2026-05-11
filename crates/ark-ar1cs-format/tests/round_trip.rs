@@ -7,7 +7,7 @@ use ark_ar1cs_format::test_fixtures::make_test_matrices;
 use ark_ar1cs_format::{ArcsError, ArcsFile, ArcsHeader, CurveId, VERSION_V0};
 use ark_bls12_381::Fr as BlsFr;
 use ark_bn254::Fr;
-use ark_relations::r1cs::ConstraintMatrices;
+use ark_ar1cs_format::ConstraintMatrices;
 
 // ---------------------------------------------------------------------------
 // Happy-path round-trips

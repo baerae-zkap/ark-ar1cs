@@ -28,7 +28,7 @@ pub use proptest_gen::{
 ///   A[1] * B[1] = C[1]  →  w1 * 1  = w1
 ///   A[2] * B[2] = C[2]  →  w2 * x  = w1
 use ark_bn254::Fr;
-use ark_relations::r1cs::ConstraintMatrices;
+use crate::ConstraintMatrices;
 
 pub fn make_test_matrices() -> ConstraintMatrices<Fr> {
     let a = vec![

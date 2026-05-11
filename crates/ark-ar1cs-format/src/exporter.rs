@@ -1,21 +1,16 @@
 use std::io::Write;
 
 use ark_ff::PrimeField;
-use ark_relations::r1cs::{
+use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystem, OptimizationGoal, SynthesisError, SynthesisMode,
 };
 
-use crate::{ArcsError, ArcsFile, CurveId};
+use crate::{compat::ConstraintMatrices, ArcsError, ArcsFile, CurveId};
 
 #[derive(Debug)]
 pub enum ExportError {
     Synthesis(SynthesisError),
     Format(ArcsError),
-    /// `cs.to_matrices()` returned `None`.
-    ///
-    /// This should not happen when the CS was created in setup mode and
-    /// `finalize()` was called — but is handled explicitly rather than panicking.
-    MatricesUnavailable,
 }
 
 impl std::fmt::Display for ExportError {
@@ -23,9 +18,6 @@ impl std::fmt::Display for ExportError {
         match self {
             ExportError::Synthesis(e) => write!(f, "synthesis error: {e}"),
             ExportError::Format(e) => write!(f, "format error: {e}"),
-            ExportError::MatricesUnavailable => {
-                write!(f, "constraint system matrices unavailable after finalization")
-            }
         }
     }
 }
@@ -53,7 +45,7 @@ impl From<ArcsError> for ExportError {
 ///   2. `cs.set_mode(SynthesisMode::Setup)`
 ///   3. `circuit.generate_constraints(cs)`
 ///   4. `cs.finalize()`
-///   5. `cs.to_matrices()`
+///   5. `ark_ar1cs_format::ConstraintMatrices::from_cs(&cs)`
 pub fn export_circuit<F, C, W>(
     circuit: C,
     curve_id: CurveId,
@@ -71,7 +63,7 @@ where
     circuit.generate_constraints(cs.clone())?;
     cs.finalize();
 
-    let matrices = cs.to_matrices().ok_or(ExportError::MatricesUnavailable)?;
+    let matrices = ConstraintMatrices::from_cs(&cs).map_err(ExportError::Synthesis)?;
 
     let file = ArcsFile::from_matrices(curve_id, &matrices);
     file.write(writer)?;

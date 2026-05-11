@@ -46,7 +46,7 @@ use ark_ar1cs_format::{ArcsFile, CurveId};
 use ark_ar1cs_zkey::{ArzkeyFile, ArzkeyHeader, ARZKEY_HEADER_SIZE};
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::{Groth16, VerifyingKey};
-use ark_relations::r1cs::{
+use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystem, ConstraintSystemRef, LinearCombination,
     OptimizationGoal, SynthesisError, SynthesisMode, Variable,
 };
@@ -63,10 +63,10 @@ impl ConstraintSynthesizer<Fr> for SquareCircuit {
     fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
         let x_var = cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
         let y_var = cs.new_input_variable(|| Ok(self.y))?;
-        cs.enforce_constraint(
-            LinearCombination::from(x_var),
-            LinearCombination::from(x_var),
-            LinearCombination::from(y_var),
+        cs.enforce_r1cs_constraint(
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(y_var),
         )?;
         Ok(())
     }
@@ -90,10 +90,10 @@ impl ConstraintSynthesizer<Fr> for ChainedSquares {
             } else {
                 cs.new_witness_variable(|| Ok(Fr::from(0u64)))?
             };
-            cs.enforce_constraint(
-                LinearCombination::from(current),
-                LinearCombination::from(current),
-                LinearCombination::from(next),
+            cs.enforce_r1cs_constraint(
+                || LinearCombination::from(current),
+                || LinearCombination::from(current),
+                || LinearCombination::from(next),
             )?;
             current = next;
         }
@@ -113,7 +113,7 @@ fn build_arzkey<C: ConstraintSynthesizer<Fr> + Clone>(circuit: C) -> ArzkeyFile<
         .generate_constraints(cs.clone())
         .expect("synthesize for matrices should not fail");
     cs.finalize();
-    let matrices = cs.to_matrices().expect("to_matrices() should not fail");
+    let matrices = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices() should not fail");
     let arcs = ArcsFile::<Fr>::from_matrices(CurveId::Bn254, &matrices);
     ArzkeyFile::<Bn254>::from_setup_output(arcs, pk)
 }

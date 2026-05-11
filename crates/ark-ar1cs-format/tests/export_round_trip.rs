@@ -9,7 +9,7 @@ use ark_ar1cs_format::importer::ImportedCircuit;
 use ark_ar1cs_format::CurveId;
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::Groth16;
-use ark_relations::r1cs::{
+use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystemRef, LinearCombination, SynthesisError,
 };
 use rand::{rngs::StdRng, SeedableRng};
@@ -33,10 +33,10 @@ impl ConstraintSynthesizer<Fr> for SquareCircuit {
         // Allocate public input y
         let y_var = cs.new_input_variable(|| Ok(self.y))?;
         // Enforce x * x = y
-        cs.enforce_constraint(
-            LinearCombination::from(x_var),
-            LinearCombination::from(x_var),
-            LinearCombination::from(y_var),
+        cs.enforce_r1cs_constraint(
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(y_var),
         )?;
         Ok(())
     }
@@ -62,7 +62,7 @@ fn setup_circuit() -> SquareCircuit {
 /// The exported file must produce the same ConstraintMatrices as direct synthesis.
 #[test]
 fn exported_matrices_match_original() {
-    use ark_relations::r1cs::{ConstraintSystem, ConstraintSynthesizer, OptimizationGoal, SynthesisMode};
+    use ark_relations::gr1cs::{ConstraintSystem, ConstraintSynthesizer, OptimizationGoal, SynthesisMode};
 
     // Synthesize directly
     let cs1 = ConstraintSystem::<Fr>::new_ref();
@@ -70,7 +70,7 @@ fn exported_matrices_match_original() {
     cs1.set_mode(SynthesisMode::Setup);
     setup_circuit().generate_constraints(cs1.clone()).unwrap();
     cs1.finalize();
-    let matrices_direct = cs1.to_matrices().unwrap();
+    let matrices_direct = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs1).unwrap();
 
     // Export → import → synthesize
     let mut buf = Vec::new();
@@ -82,7 +82,7 @@ fn exported_matrices_match_original() {
     cs2.set_mode(SynthesisMode::Setup);
     imported.generate_constraints(cs2.clone()).unwrap();
     cs2.finalize();
-    let matrices_imported = cs2.to_matrices().unwrap();
+    let matrices_imported = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs2).unwrap();
 
     assert_eq!(matrices_direct.num_instance_variables, matrices_imported.num_instance_variables);
     assert_eq!(matrices_direct.num_witness_variables,  matrices_imported.num_witness_variables);

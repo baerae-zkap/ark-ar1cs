@@ -6,7 +6,7 @@ use ark_ar1cs_format::{ArcsFile, CurveId};
 use ark_ar1cs_zkey::{ArzkeyError, ArzkeyFile, MAX_ARZKEY_BYTES};
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::Groth16;
-use ark_relations::r1cs::{
+use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystem, ConstraintSystemRef, LinearCombination,
     OptimizationGoal, SynthesisError, SynthesisMode,
 };
@@ -42,10 +42,10 @@ impl ConstraintSynthesizer<Fr> for SquareCircuit {
     fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
         let x_var = cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
         let y_var = cs.new_input_variable(|| Ok(self.y))?;
-        cs.enforce_constraint(
-            LinearCombination::from(x_var),
-            LinearCombination::from(x_var),
-            LinearCombination::from(y_var),
+        cs.enforce_r1cs_constraint(
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(y_var),
         )?;
         Ok(())
     }
@@ -64,7 +64,7 @@ fn extract_arcs() -> ArcsFile<Fr> {
     cs.set_mode(SynthesisMode::Setup);
     setup_circuit().generate_constraints(cs.clone()).unwrap();
     cs.finalize();
-    let matrices = cs.to_matrices().unwrap();
+    let matrices = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).unwrap();
     ArcsFile::<Fr>::from_matrices(CurveId::Bn254, &matrices)
 }
 

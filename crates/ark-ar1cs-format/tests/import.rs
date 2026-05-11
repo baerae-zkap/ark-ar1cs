@@ -3,7 +3,8 @@ use ark_ar1cs_format::importer::ImportedCircuit;
 use ark_ar1cs_format::test_fixtures::make_test_matrices;
 use ark_ar1cs_format::{ArcsError, ArcsFile, CurveId};
 use ark_bn254::Fr;
-use ark_relations::r1cs::{ConstraintMatrices, ConstraintSystem, ConstraintSynthesizer};
+use ark_ar1cs_format::ConstraintMatrices;
+use ark_relations::gr1cs::{ConstraintSystem, ConstraintSynthesizer};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,7 +41,7 @@ fn imported_circuit_produces_same_matrices() {
         .expect("generate_constraints failed");
     cs.finalize();
 
-    let recovered = cs.to_matrices().expect("to_matrices failed");
+    let recovered = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices failed");
 
     assert_eq!(original.num_instance_variables, recovered.num_instance_variables);
     assert_eq!(original.num_witness_variables, recovered.num_witness_variables);
@@ -65,7 +66,7 @@ fn imported_circuit_is_clone() {
         let cs = ConstraintSystem::<Fr>::new_ref();
         c.generate_constraints(cs.clone()).unwrap();
         cs.finalize();
-        let m = cs.to_matrices().unwrap();
+        let m = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).unwrap();
         assert_eq!(m.num_constraints, 3);
     }
 }
@@ -130,7 +131,7 @@ fn num_instance_one_no_explicit_inputs() {
     circuit.generate_constraints(cs.clone()).expect("generate_constraints failed");
     cs.finalize();
 
-    let recovered = cs.to_matrices().expect("to_matrices failed");
+    let recovered = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices failed");
     assert_eq!(recovered.num_instance_variables, 1);
     assert_eq!(recovered.num_witness_variables, 1);
     assert_eq!(recovered.num_constraints, 1);
@@ -167,7 +168,7 @@ fn num_witness_zero() {
     circuit.generate_constraints(cs.clone()).expect("generate_constraints failed");
     cs.finalize();
 
-    let recovered = cs.to_matrices().expect("to_matrices failed");
+    let recovered = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices failed");
     assert_eq!(recovered.num_instance_variables, 2);
     assert_eq!(recovered.num_witness_variables, 0);
     assert_eq!(recovered.num_constraints, 1);

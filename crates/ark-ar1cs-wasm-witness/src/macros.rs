@@ -210,7 +210,7 @@ mod tests {
     use crate::abi::WitnessAbiCode;
     use ark_ar1cs_wtns::ArwtnsFile;
     use ark_bn254::Fr;
-    use ark_relations::r1cs::{
+    use ark_relations::gr1cs::{
         ConstraintSynthesizer, ConstraintSystemRef, LinearCombination, SynthesisError,
     };
     use serde::{Deserialize, Serialize};
@@ -235,10 +235,10 @@ mod tests {
             let z = cs.new_input_variable(|| Ok(self.z))?;
             let x = cs.new_witness_variable(|| Ok(self.x))?;
             let y = cs.new_witness_variable(|| Ok(self.y))?;
-            cs.enforce_constraint(
-                LinearCombination::from(x),
-                LinearCombination::from(y),
-                LinearCombination::from(z),
+            cs.enforce_r1cs_constraint(
+                || LinearCombination::from(x),
+                || LinearCombination::from(y),
+                || LinearCombination::from(z),
             )?;
             Ok(())
         }

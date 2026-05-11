@@ -36,7 +36,7 @@
 //! detect generator drift.
 
 use ark_ff::PrimeField;
-use ark_relations::r1cs::ConstraintMatrices;
+use crate::ConstraintMatrices;
 use proptest::prelude::*;
 
 /// Maximum `num_constraints` per OV-5 #iv. Hard cap to keep the

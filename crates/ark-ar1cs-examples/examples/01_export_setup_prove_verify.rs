@@ -38,7 +38,7 @@ use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ar1cs_zkey::ArzkeyFile;
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::Groth16;
-use ark_relations::r1cs::{
+use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystemRef, LinearCombination, SynthesisError,
 };
 use rand::{rngs::StdRng, SeedableRng};
@@ -60,10 +60,10 @@ impl ConstraintSynthesizer<Fr> for SquareCircuit {
         let y_var = cs.new_input_variable(|| Ok(self.y))?;
         let x_var =
             cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
-        cs.enforce_constraint(
-            LinearCombination::from(x_var),
-            LinearCombination::from(x_var),
-            LinearCombination::from(y_var),
+        cs.enforce_r1cs_constraint(
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(y_var),
         )?;
         Ok(())
     }

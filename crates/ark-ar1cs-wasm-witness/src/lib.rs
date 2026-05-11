@@ -33,7 +33,7 @@ pub mod ark_ar1cs_format_reexport {
 use ark_ar1cs_format::CurveId;
 use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ff::PrimeField;
-use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem, SynthesisMode};
+use ark_relations::gr1cs::{ConstraintSynthesizer, ConstraintSystem, SynthesisMode};
 
 pub use abi::WitnessAbiCode;
 pub use error::WitnessError;
@@ -101,17 +101,18 @@ where
     let cs = ConstraintSystem::<F>::new_ref();
     cs.set_mode(SynthesisMode::Prove {
         construct_matrices: false,
+        generate_lc_assignments: false,
     });
     circuit
         .generate_constraints(cs.clone())
         .map_err(WitnessError::Synthesis)?;
 
     let cs_inner = cs.borrow().ok_or(WitnessError::ConstraintSystemUnavailable)?;
-    if cs_inner.instance_assignment.is_empty() {
+    if cs_inner.assignments.instance_assignment.is_empty() {
         return Err(WitnessError::MissingOneWire);
     }
-    let instance: alloc::vec::Vec<F> = cs_inner.instance_assignment[1..].to_vec();
-    let witness: alloc::vec::Vec<F> = cs_inner.witness_assignment.clone();
+    let instance: alloc::vec::Vec<F> = cs_inner.assignments.instance_assignment[1..].to_vec();
+    let witness: alloc::vec::Vec<F> = cs_inner.assignments.witness_assignment.clone();
     drop(cs_inner);
 
     Ok(ArwtnsFile::from_assignments(
@@ -157,7 +158,7 @@ mod tests {
     /// `instance_assignment` and `witness_assignment`) MUST be identical.
     #[test]
     fn circuit_to_arwtns_byte_identical_to_default_prove_mode() {
-        use ark_relations::r1cs::SynthesisMode;
+        use ark_relations::gr1cs::SynthesisMode;
 
         let x = Fr::from(13u64);
         let y = Fr::from(17u64);
@@ -174,11 +175,11 @@ mod tests {
 
         // Reference path: open-coded with default construct_matrices=true.
         let cs = ConstraintSystem::<Fr>::new_ref();
-        cs.set_mode(SynthesisMode::Prove { construct_matrices: true });
+        cs.set_mode(SynthesisMode::Prove { construct_matrices: true, generate_lc_assignments: false });
         MockCircuit { x, y, z }.generate_constraints(cs.clone()).unwrap();
         let cs_inner = cs.borrow().unwrap();
-        let instance: alloc::vec::Vec<Fr> = cs_inner.instance_assignment[1..].to_vec();
-        let witness: alloc::vec::Vec<Fr> = cs_inner.witness_assignment.clone();
+        let instance: alloc::vec::Vec<Fr> = cs_inner.assignments.instance_assignment[1..].to_vec();
+        let witness: alloc::vec::Vec<Fr> = cs_inner.assignments.witness_assignment.clone();
         drop(cs_inner);
         let arwtns_full = ArwtnsFile::from_assignments(
             CurveId::Bn254, blake3, &instance, &witness,

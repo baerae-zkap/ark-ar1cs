@@ -1,7 +1,7 @@
 use std::io::Read;
 
 use ark_ff::PrimeField;
-use ark_relations::r1cs::{
+use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystemRef, LinearCombination, SynthesisError, Variable,
 };
 
@@ -18,7 +18,7 @@ use crate::{ArcsError, ArcsFile, CurveId};
 ///    — arkworks pre-allocates the implicit "1" wire at index 0; we allocate only
 ///    the explicit public inputs.
 /// 2. `cs.new_witness_variable(|| Ok(F::zero()))` × `num_witness_variables`
-/// 3. `cs.enforce_constraint(lc_a, lc_b, lc_c)` for every constraint row.
+/// 3. `cs.enforce_r1cs_constraint(lc_a, lc_b, lc_c)` for every constraint row.
 #[derive(Clone, Debug)]
 pub struct ImportedCircuit<F: PrimeField> {
     file: ArcsFile<F>,
@@ -52,12 +52,12 @@ impl<F: PrimeField> ConstraintSynthesizer<F> for ImportedCircuit<F> {
 
         // Allocate explicit public inputs (index 0 = "1" wire is pre-allocated).
         for _ in 0..(num_instance.saturating_sub(1)) {
-            cs.new_input_variable(|| Ok(F::zero()))?;
+            let _ = cs.new_input_variable(|| Ok(F::zero()))?;
         }
 
         // Allocate witness variables.
         for _ in 0..num_witness {
-            cs.new_witness_variable(|| Ok(F::zero()))?;
+            let _ = cs.new_witness_variable(|| Ok(F::zero()))?;
         }
 
         // Replay constraints.
@@ -71,7 +71,7 @@ impl<F: PrimeField> ConstraintSynthesizer<F> for ImportedCircuit<F> {
             let lc_a = row_to_lc(a_row, num_instance);
             let lc_b = row_to_lc(b_row, num_instance);
             let lc_c = row_to_lc(c_row, num_instance);
-            cs.enforce_constraint(lc_a, lc_b, lc_c)?;
+            cs.enforce_r1cs_constraint(|| lc_a, || lc_b, || lc_c)?;
         }
 
         Ok(())
@@ -80,17 +80,17 @@ impl<F: PrimeField> ConstraintSynthesizer<F> for ImportedCircuit<F> {
 
 /// Map a matrix column index to the corresponding arkworks [`Variable`].
 ///
-/// Column ordering (from `ark_relations::r1cs::ConstraintMatrices` docs):
-///   0                          → `Variable::One`
-///   1 .. num_instance_vars−1   → `Variable::Instance(col)`
-///   num_instance_vars ..       → `Variable::Witness(col − num_instance_vars)`
+/// Column ordering (from `ark_relations::gr1cs::ConstraintMatrices` docs):
+///   0                          → `Variable::one()`
+///   1 .. num_instance_vars−1   → `Variable::instance(col)`
+///   num_instance_vars ..       → `Variable::witness(col − num_instance_vars)`
 fn col_to_variable(col: usize, num_instance: usize) -> Variable {
     if col == 0 {
-        Variable::One
+        Variable::one()
     } else if col < num_instance {
-        Variable::Instance(col)
+        Variable::instance(col)
     } else {
-        Variable::Witness(col - num_instance)
+        Variable::witness(col - num_instance)
     }
 }
 

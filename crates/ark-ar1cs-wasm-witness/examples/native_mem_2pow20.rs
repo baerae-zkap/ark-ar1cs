@@ -21,7 +21,7 @@ use ark_ar1cs_wasm_witness::{
 };
 use ark_ar1cs_wtns::ArwtnsFile;
 use ark_bn254::Fr;
-use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem, SynthesisMode};
+use ark_relations::gr1cs::{ConstraintSynthesizer, ConstraintSystem, SynthesisMode};
 
 #[global_allocator]
 static ALLOC: dhat::Alloc = dhat::Alloc;
@@ -63,13 +63,14 @@ fn main() {
         let cs = ConstraintSystem::<Fr>::new_ref();
         cs.set_mode(SynthesisMode::Prove {
             construct_matrices: true,
+            generate_lc_assignments: false,
         });
         circuit
             .generate_constraints(cs.clone())
             .expect("generate_constraints failed");
         let inner = cs.borrow().expect("cs borrow failed");
-        let instance: Vec<Fr> = inner.instance_assignment[1..].to_vec();
-        let witness: Vec<Fr> = inner.witness_assignment.clone();
+        let instance: Vec<Fr> = inner.assignments.instance_assignment[1..].to_vec();
+        let witness: Vec<Fr> = inner.assignments.witness_assignment.clone();
         drop(inner);
         ArwtnsFile::from_assignments(
             CurveId::Bn254,

@@ -12,18 +12,18 @@ keywords = ["zk-snark", "groth16", "arkworks", "r1cs"]
 ark-ar1cs-format = { path = "../ark-ar1cs-format" }
 ark-ar1cs-zkey = { path = "../ark-ar1cs-zkey" }
 ark-ar1cs-wtns = { path = "../ark-ar1cs-wtns" }
-ark-ec = "0.5.0"
-ark-ff = "0.5.0"
-ark-groth16 = "0.5.0"
-ark-relations = "0.5.1"
-ark-serialize = "0.5.0"
-ark-std = "0.5.0"
+ark-ec = "0.6"
+ark-ff = "0.6"
+ark-groth16 = "0.6"
+ark-relations = "0.6"
+ark-serialize = "0.6"
+ark-std = "0.6"
 thiserror = "2"
 
 [dev-dependencies]
 ark-ar1cs-format = { path = "../ark-ar1cs-format", features = ["test-fixtures"] }
-ark-bls12-381 = "0.5.0"
-ark-bn254 = "0.5.0"
-ark-ff = { version = "0.5.0", features = ["std"] }
+ark-bls12-381 = "0.6"
+ark-bn254 = "0.6"
+ark-ff = { version = "0.6", features = ["std"] }
 proptest = "1"
 rand = "0.8"

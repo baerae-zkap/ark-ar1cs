@@ -1,4 +1,4 @@
-use ark_relations::r1cs::SynthesisError;
+use ark_relations::gr1cs::SynthesisError;
 use ark_serialize::SerializationError;
 
 /// The reason a `(.arzkey, .arwtns)` pair fails the bind-check stage of
