@@ -11,9 +11,9 @@ crate-type = ["cdylib"]
 [dependencies]
 ark-ar1cs-wasm-witness = { path = "../../..", features = ["test-mock"] }
 ark-ar1cs-format = { path = "../../../../ark-ar1cs-format" }
-ark-bn254 = "0.5.0"
-ark-ff = "0.5.0"
-ark-relations = "0.5.1"
+ark-bn254 = "0.6"
+ark-ff = "0.6"
+ark-relations = "0.6"
 serde = { version = "1", default-features = false, features = ["derive"] }
 postcard = { version = "1", default-features = false, features = ["alloc"] }
 

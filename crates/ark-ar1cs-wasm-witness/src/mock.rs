@@ -17,7 +17,7 @@ use alloc::vec::Vec;
 
 use ark_bn254::Fr;
 use ark_ff::Field;
-use ark_relations::r1cs::{
+use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystemRef, LinearCombination, SynthesisError,
 };
 use serde::{Deserialize, Serialize};
@@ -69,10 +69,10 @@ impl ConstraintSynthesizer<Fr> for MockCircuit {
         let z = cs.new_input_variable(|| Ok(self.z))?;
         let x = cs.new_witness_variable(|| Ok(self.x))?;
         let y = cs.new_witness_variable(|| Ok(self.y))?;
-        cs.enforce_constraint(
-            LinearCombination::from(x),
-            LinearCombination::from(y),
-            LinearCombination::from(z),
+        cs.enforce_r1cs_constraint(
+            || LinearCombination::from(x),
+            || LinearCombination::from(y),
+            || LinearCombination::from(z),
         )?;
         Ok(())
     }
@@ -174,17 +174,17 @@ impl ConstraintSynthesizer<Fr> for LargeMockCircuit {
 
         // Enforce: x_i * x_i == x_{i+1} for i in 0..N-1.
         for i in 0..(n as usize - 1) {
-            cs.enforce_constraint(
-                LinearCombination::from(witness_vars[i]),
-                LinearCombination::from(witness_vars[i]),
-                LinearCombination::from(witness_vars[i + 1]),
+            cs.enforce_r1cs_constraint(
+                || LinearCombination::from(witness_vars[i]),
+                || LinearCombination::from(witness_vars[i]),
+                || LinearCombination::from(witness_vars[i + 1]),
             )?;
         }
         // Final constraint closes the chain: x_{N-1} * x_{N-1} == x_N.
-        cs.enforce_constraint(
-            LinearCombination::from(witness_vars[n as usize - 1]),
-            LinearCombination::from(witness_vars[n as usize - 1]),
-            LinearCombination::from(final_var),
+        cs.enforce_r1cs_constraint(
+            || LinearCombination::from(witness_vars[n as usize - 1]),
+            || LinearCombination::from(witness_vars[n as usize - 1]),
+            || LinearCombination::from(final_var),
         )?;
         Ok(())
     }
@@ -222,7 +222,7 @@ impl WitnessGenerator for LargeMockGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ark_relations::r1cs::ConstraintSystem;
+    use ark_relations::gr1cs::ConstraintSystem;
 
     /// Tiny depth so the test is fast. Verifies the constraint accounting
     /// without paying for 2^20.
@@ -236,11 +236,11 @@ mod tests {
         let cs = ConstraintSystem::<Fr>::new_ref();
         circuit.generate_constraints(cs.clone()).unwrap();
         let inner = cs.borrow().unwrap();
-        assert_eq!(inner.num_constraints, 1usize << D);
+        assert_eq!(inner.num_constraints(), 1usize << D);
         // N witnesses (x_0 .. x_{N-1}) — instance variable count is 2:
         // implicit one-wire + x_final.
-        assert_eq!(inner.num_witness_variables, 1usize << D);
-        assert_eq!(inner.num_instance_variables, 2);
+        assert_eq!(inner.num_witness_variables(), 1usize << D);
+        assert_eq!(inner.num_instance_variables(), 2);
     }
 
     #[test]
@@ -252,15 +252,15 @@ mod tests {
         circuit.generate_constraints(cs.clone()).unwrap();
         let inner = cs.borrow().unwrap();
         // x_0 == seed
-        assert_eq!(inner.witness_assignment[0], seed);
+        assert_eq!(inner.assignments.witness_assignment[0], seed);
         // x_1 == seed^2
-        assert_eq!(inner.witness_assignment[1], seed.square());
+        assert_eq!(inner.assignments.witness_assignment[1], seed.square());
         // public input (after the implicit one-wire) is x_N == seed^(2^N)
         let mut expected_final = seed;
         for _ in 0..(1u32 << D) {
             expected_final = expected_final.square();
         }
-        assert_eq!(inner.instance_assignment[1], expected_final);
+        assert_eq!(inner.assignments.instance_assignment[1], expected_final);
     }
 
     #[test]

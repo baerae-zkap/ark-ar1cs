@@ -17,7 +17,7 @@ use ark_ar1cs_format::{ArcsFile, CurveId};
 use ark_ar1cs_zkey::ArzkeyFile;
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::Groth16;
-use ark_relations::r1cs::{
+use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystem, ConstraintSystemRef, LinearCombination,
     OptimizationGoal, SynthesisError, SynthesisMode,
 };
@@ -34,10 +34,10 @@ impl ConstraintSynthesizer<Fr> for SquareCircuit {
         let y_var = cs.new_input_variable(|| Ok(self.y))?;
         let x_var =
             cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
-        cs.enforce_constraint(
-            LinearCombination::from(x_var),
-            LinearCombination::from(x_var),
-            LinearCombination::from(y_var),
+        cs.enforce_r1cs_constraint(
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(y_var),
         )?;
         Ok(())
     }
@@ -63,9 +63,8 @@ fn build_arzkey() -> Result<ArzkeyFile<Bn254>, Box<dyn Error>> {
     cs.set_mode(SynthesisMode::Setup);
     setup_circuit.generate_constraints(cs.clone())?;
     cs.finalize();
-    let matrices = cs
-        .to_matrices()
-        .ok_or("ConstraintSystem::to_matrices returned None")?;
+    let matrices = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs)
+        .map_err(|e| format!("ConstraintMatrices::from_cs failed: {e:?}"))?;
 
     let arcs = ArcsFile::<Fr>::from_matrices(CurveId::Bn254, &matrices);
     Ok(ArzkeyFile::<Bn254>::from_setup_output(arcs, pk))

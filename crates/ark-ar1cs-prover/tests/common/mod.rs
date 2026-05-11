@@ -21,9 +21,10 @@ use ark_bn254::{Bn254, Fr as BnFr};
 use ark_ec::pairing::Pairing;
 use ark_ff::PrimeField;
 use ark_groth16::{Groth16, ProvingKey};
-use ark_relations::r1cs::{
-    ConstraintMatrices, ConstraintSynthesizer, ConstraintSystem, ConstraintSystemRef,
-    LinearCombination, OptimizationGoal, SynthesisError, SynthesisMode,
+use ark_ar1cs_format::ConstraintMatrices;
+use ark_relations::gr1cs::{
+    ConstraintSynthesizer, ConstraintSystem, ConstraintSystemRef, LinearCombination,
+    OptimizationGoal, SynthesisError, SynthesisMode,
 };
 use rand::{rngs::StdRng, SeedableRng};
 
@@ -37,10 +38,10 @@ impl<F: PrimeField> ConstraintSynthesizer<F> for SquareCircuit<F> {
     fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
         let y_var = cs.new_input_variable(|| Ok(self.y))?;
         let x_var = cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
-        cs.enforce_constraint(
-            LinearCombination::from(x_var),
-            LinearCombination::from(x_var),
-            LinearCombination::from(y_var),
+        cs.enforce_r1cs_constraint(
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(y_var),
         )?;
         Ok(())
     }
@@ -61,7 +62,7 @@ where
     cs.set_mode(SynthesisMode::Setup);
     circuit.generate_constraints(cs.clone()).unwrap();
     cs.finalize();
-    cs.to_matrices().expect("to_matrices() failed")
+    ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices() failed")
 }
 
 /// Curve-generic e2e helper: run Groth16 setup over `E`, wrap as `.arzkey`,

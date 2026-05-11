@@ -18,17 +18,17 @@ fast-prove = []
 
 [dependencies]
 ark-ar1cs-format = { path = "../ark-ar1cs-format" }
-ark-ec = "0.5.0"
-ark-groth16 = "0.5.0"
-ark-serialize = "0.5.0"
+ark-ec = "0.6"
+ark-groth16 = "0.6"
+ark-serialize = "0.6"
 blake3 = "1"
 thiserror = "2"
 
 [dev-dependencies]
-ark-bn254 = "0.5.0"
-ark-ff = { version = "0.5.0", features = ["std"] }
-ark-relations = "0.5.1"
-ark-std = "0.5.0"
+ark-bn254 = "0.6"
+ark-ff = { version = "0.6", features = ["std"] }
+ark-relations = "0.6"
+ark-std = "0.6"
 blake3 = "1"
 rand = "0.8"
 tempfile = "3"

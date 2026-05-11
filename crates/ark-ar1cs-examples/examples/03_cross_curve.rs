@@ -24,7 +24,7 @@ use ark_bn254::Bn254;
 use ark_ec::pairing::Pairing;
 use ark_ff::PrimeField;
 use ark_groth16::{Groth16, ProvingKey};
-use ark_relations::r1cs::{
+use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystem, ConstraintSystemRef, LinearCombination,
     OptimizationGoal, SynthesisError, SynthesisMode,
 };
@@ -41,10 +41,10 @@ impl<F: PrimeField> ConstraintSynthesizer<F> for SquareCircuit<F> {
         let y_var = cs.new_input_variable(|| Ok(self.y))?;
         let x_var =
             cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
-        cs.enforce_constraint(
-            LinearCombination::from(x_var),
-            LinearCombination::from(x_var),
-            LinearCombination::from(y_var),
+        cs.enforce_r1cs_constraint(
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(x_var),
+            || LinearCombination::from(y_var),
         )?;
         Ok(())
     }
@@ -52,14 +52,14 @@ impl<F: PrimeField> ConstraintSynthesizer<F> for SquareCircuit<F> {
 
 fn collect_matrices<F: PrimeField, C: ConstraintSynthesizer<F>>(
     circuit: C,
-) -> Result<ark_relations::r1cs::ConstraintMatrices<F>, Box<dyn Error>> {
+) -> Result<ark_ar1cs_format::ConstraintMatrices<F>, Box<dyn Error>> {
     let cs = ConstraintSystem::<F>::new_ref();
     cs.set_optimization_goal(OptimizationGoal::Constraints);
     cs.set_mode(SynthesisMode::Setup);
     circuit.generate_constraints(cs.clone())?;
     cs.finalize();
-    cs.to_matrices()
-        .ok_or_else(|| "ConstraintSystem::to_matrices returned None".into())
+    ark_ar1cs_format::ConstraintMatrices::from_cs(&cs)
+        .map_err(|e| format!("ConstraintMatrices::from_cs failed: {e:?}").into())
 }
 
 /// Run the full pipeline on a single pairing curve `E`.

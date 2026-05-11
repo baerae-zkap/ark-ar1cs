@@ -1,7 +1,7 @@
 //! Top-level errors emitted by the generic witness layer.
 
 use ark_ar1cs_wtns::ArwtnsError;
-use ark_relations::r1cs::SynthesisError;
+use ark_relations::gr1cs::SynthesisError;
 
 use crate::abi::WitnessAbiCode;
 

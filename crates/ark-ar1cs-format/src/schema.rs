@@ -8,9 +8,9 @@ use std::io::{Cursor, Read, Write};
 pub const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024 * 1024; // 2 GiB
 
 use ark_ff::PrimeField;
-use ark_relations::r1cs::ConstraintMatrices;
 
 use crate::{
+    compat::ConstraintMatrices,
     error::ArcsError,
     header::{ArcsHeader, CurveId, VERSION_V0},
     matrix::{read_matrix, write_matrix, Matrix},

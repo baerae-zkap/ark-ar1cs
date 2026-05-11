@@ -8,7 +8,7 @@
 use ark_ar1cs_format::test_fixtures::make_test_matrices;
 use ark_ar1cs_format::{ArcsFile, CurveId};
 use ark_bn254::Fr;
-use ark_relations::r1cs::ConstraintMatrices;
+use ark_ar1cs_format::ConstraintMatrices;
 
 fn matrices_with_row_a(row: Vec<(Fr, usize)>) -> ConstraintMatrices<Fr> {
     ConstraintMatrices {

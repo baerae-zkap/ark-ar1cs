@@ -65,7 +65,7 @@ where
         arzkey.pk(),
         r,
         s,
-        &matrices,
+        &[matrices.a, matrices.b, matrices.c],
         arzkey.header.num_instance_variables as usize,
         arzkey.header.num_constraints as usize,
         &full_assignment,
