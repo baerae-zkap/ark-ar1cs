@@ -1,10 +1,10 @@
 [package]
 name = "ark-ar1cs-zkey"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "Portable Groth16 setup-output format (.arzkey) — matrices + VK + PK in one file"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/snp-labs/ark-ar1cs"
 categories = ["cryptography"]
 keywords = ["zk-snark", "groth16", "arkworks", "r1cs"]
 
@@ -18,17 +18,17 @@ fast-prove = []
 
 [dependencies]
 ark-ar1cs-format = { path = "../ark-ar1cs-format" }
-ark-ec = "0.6"
-ark-groth16 = "0.6"
-ark-serialize = "0.6"
-blake3 = "1"
-thiserror = "2"
+ark-ec           = { workspace = true }
+ark-groth16      = { workspace = true }
+ark-serialize    = { workspace = true }
+blake3           = { workspace = true }
+thiserror        = { workspace = true }
 
 [dev-dependencies]
-ark-bn254 = "0.6"
-ark-ff = { version = "0.6", features = ["std"] }
-ark-relations = "0.6"
-ark-std = "0.6"
-blake3 = "1"
-rand = "0.8"
-tempfile = "3"
+ark-bn254     = { workspace = true }
+ark-ff        = { workspace = true, features = ["std"] }
+ark-relations = { workspace = true }
+ark-std       = { workspace = true }
+blake3        = { workspace = true }
+rand          = { workspace = true }
+tempfile      = { workspace = true }

@@ -1,9 +1,9 @@
 [package]
 name = "ark-ar1cs-format"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 description = "Portable Groth16 constraint system format for arkworks circuits"
-license = "MIT OR Apache-2.0"
 
 [features]
 default = []
@@ -14,30 +14,30 @@ default = []
 test-fixtures = ["dep:proptest", "dep:ark-bn254"]
 
 [dependencies]
-ark-serialize = "0.6"
-ark-ff = "0.6"
-ark-relations = "0.6"
-ark-std = "0.6"
-blake3 = "1"
+ark-serialize = { workspace = true }
+ark-ff        = { workspace = true }
+ark-relations = { workspace = true }
+ark-std       = { workspace = true }
+blake3        = { workspace = true }
 # Optional — only when `test-fixtures` is enabled (used by
 # `test_fixtures::make_test_matrices`).
-ark-bn254 = { version = "0.6", optional = true }
+ark-bn254     = { workspace = true, optional = true }
 
 # Native-only: keeps `cargo build --target wasm32-unknown-unknown
 # -p ark-ar1cs-format --no-default-features` clean (proptest pulls in `regex`,
 # `rand_chacha`, `rusty-fork`, etc. which don't all build on wasm32). The
 # proptest module is itself `cfg(not(target_arch = "wasm32"))`-gated.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-proptest = { version = "1", optional = true }
+proptest = { workspace = true, optional = true }
 
 [dev-dependencies]
 # Self-cycle so `cargo test -p ark-ar1cs-format` activates the test-fixtures
 # feature on the lib for integration tests that reference `test_fixtures::*`.
 ark-ar1cs-format = { path = ".", features = ["test-fixtures"] }
-ark-bn254 = "0.6"
-ark-bls12-381 = "0.6"
-ark-ec = "0.6"
-ark-ff = { version = "0.6", features = ["std"] }
-ark-groth16 = "0.6"
-proptest = "1"
-rand = "0.8"
+ark-bn254     = { workspace = true }
+ark-bls12-381 = { workspace = true }
+ark-ec        = { workspace = true }
+ark-ff        = { workspace = true, features = ["std"] }
+ark-groth16   = { workspace = true }
+proptest      = { workspace = true }
+rand          = { workspace = true }
