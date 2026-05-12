@@ -139,10 +139,7 @@ pub unsafe fn return_owned_buffer(
 /// # Safety
 ///
 /// If non-null, `host_blake3_ptr` must point to at least 32 readable bytes.
-pub unsafe fn check_host_blake3(
-    host_blake3_ptr: *const u8,
-    embedded: &[u8; 32],
-) -> WitnessAbiCode {
+pub unsafe fn check_host_blake3(host_blake3_ptr: *const u8, embedded: &[u8; 32]) -> WitnessAbiCode {
     if host_blake3_ptr.is_null() {
         return WitnessAbiCode::Blake3Mismatch;
     }
@@ -223,7 +220,11 @@ mod tests {
         let mut out_len: u32 = 0;
         // SAFETY: out_ptr/out_len are stack-owned and writable.
         let code = unsafe {
-            return_owned_buffer(payload, &mut out_ptr as *mut *mut u8, &mut out_len as *mut u32)
+            return_owned_buffer(
+                payload,
+                &mut out_ptr as *mut *mut u8,
+                &mut out_len as *mut u32,
+            )
         };
         assert_eq!(code, WitnessAbiCode::Ok);
         assert_eq!(out_len as usize, payload.len());

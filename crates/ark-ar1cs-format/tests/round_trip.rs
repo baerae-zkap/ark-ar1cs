@@ -4,10 +4,10 @@
 ///   Variables: [1(implicit), x(pub), w1(witness), w2(witness)]
 ///   num_instance_variables=2, num_witness_variables=2, num_constraints=3
 use ark_ar1cs_format::test_fixtures::make_test_matrices;
+use ark_ar1cs_format::ConstraintMatrices;
 use ark_ar1cs_format::{ArcsError, ArcsFile, ArcsHeader, CurveId, VERSION_V0};
 use ark_bls12_381::Fr as BlsFr;
 use ark_bn254::Fr;
-use ark_ar1cs_format::ConstraintMatrices;
 
 // ---------------------------------------------------------------------------
 // Happy-path round-trips
@@ -48,8 +48,14 @@ fn round_trip_into_constraint_matrices() {
         original_matrices.num_witness_variables,
         recovered_matrices.num_witness_variables
     );
-    assert_eq!(original_matrices.num_constraints, recovered_matrices.num_constraints);
-    assert_eq!(original_matrices.a_num_non_zero, recovered_matrices.a_num_non_zero);
+    assert_eq!(
+        original_matrices.num_constraints,
+        recovered_matrices.num_constraints
+    );
+    assert_eq!(
+        original_matrices.a_num_non_zero,
+        recovered_matrices.a_num_non_zero
+    );
     assert_eq!(original_matrices.a, recovered_matrices.a);
     assert_eq!(original_matrices.b, recovered_matrices.b);
     assert_eq!(original_matrices.c, recovered_matrices.c);
@@ -204,8 +210,8 @@ fn rejects_truncated_file() {
     // Truncate so body is incomplete but file is still > 32 bytes.
     buf.truncate(57); // header only, no matrices, no valid checksum
 
-    let err = ArcsFile::<Fr>::read(&mut buf.as_slice())
-        .expect_err("should have rejected truncated file");
+    let err =
+        ArcsFile::<Fr>::read(&mut buf.as_slice()).expect_err("should have rejected truncated file");
     assert!(
         matches!(err, ArcsError::ChecksumMismatch),
         "expected ChecksumMismatch, got: {err}"
@@ -224,8 +230,8 @@ fn rejects_checksum_corruption() {
     let body_len = buf.len() - 32;
     buf[body_len / 2] ^= 0xFF;
 
-    let err = ArcsFile::<Fr>::read(&mut buf.as_slice())
-        .expect_err("should have rejected corrupted body");
+    let err =
+        ArcsFile::<Fr>::read(&mut buf.as_slice()).expect_err("should have rejected corrupted body");
     assert!(matches!(err, ArcsError::ChecksumMismatch));
 }
 
@@ -239,7 +245,9 @@ fn validate_rejects_zero_instance_variables() {
     let mut file = ArcsFile::from_matrices(CurveId::Bn254, &matrices);
     file.header.num_instance_variables = 0;
 
-    let err = file.validate().expect_err("should reject num_instance_variables=0");
+    let err = file
+        .validate()
+        .expect_err("should reject num_instance_variables=0");
     assert!(matches!(err, ArcsError::ValidationFailed(_)));
 }
 
@@ -249,7 +257,9 @@ fn validate_rejects_a_non_zero_mismatch() {
     let mut file = ArcsFile::from_matrices(CurveId::Bn254, &matrices);
     file.header.a_non_zero = 99; // wrong — actual is 3
 
-    let err = file.validate().expect_err("should reject a_non_zero mismatch");
+    let err = file
+        .validate()
+        .expect_err("should reject a_non_zero mismatch");
     assert!(matches!(err, ArcsError::ValidationFailed(_)));
 }
 
@@ -259,7 +269,9 @@ fn validate_rejects_row_count_mismatch() {
     let mut file = ArcsFile::from_matrices(CurveId::Bn254, &matrices);
     file.header.num_constraints = 5; // wrong — actual row count is 3
 
-    let err = file.validate().expect_err("should reject row count mismatch");
+    let err = file
+        .validate()
+        .expect_err("should reject row count mismatch");
     assert!(matches!(err, ArcsError::ValidationFailed(_)));
 }
 
@@ -272,6 +284,8 @@ fn validate_rejects_col_out_of_bounds() {
     file.a[0].push((Fr::from(1u64), 999));
     file.header.a_non_zero += 1;
 
-    let err = file.validate().expect_err("should reject out-of-bounds column");
+    let err = file
+        .validate()
+        .expect_err("should reject out-of-bounds column");
     assert!(matches!(err, ArcsError::ValidationFailed(_)));
 }

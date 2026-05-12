@@ -86,8 +86,7 @@ pub fn unpack(buf: &[u8]) -> Result<Vec<&[u8]>, PackedError> {
     if buf[7] != 0x00 {
         return Err(PackedError::ReservedNotZero);
     }
-    let count =
-        u32::from_le_bytes([buf[8], buf[9], buf[10], buf[11]]) as usize;
+    let count = u32::from_le_bytes([buf[8], buf[9], buf[10], buf[11]]) as usize;
 
     let mut out: Vec<&[u8]> = Vec::with_capacity(count);
     let mut cursor = PACK_HEADER_LEN;

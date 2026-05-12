@@ -84,5 +84,6 @@ fn validate_passes_for_constructed_file() {
         &[Fr::from(1u64)],
         &[Fr::from(2u64)],
     );
-    f.validate().expect("validate should pass on freshly constructed file");
+    f.validate()
+        .expect("validate should pass on freshly constructed file");
 }

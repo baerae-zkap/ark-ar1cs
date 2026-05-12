@@ -35,8 +35,8 @@
 //! `ProverError::AssignmentNotSatisfying`, which is the signal we use to
 //! detect generator drift.
 
-use ark_ff::PrimeField;
 use crate::ConstraintMatrices;
+use ark_ff::PrimeField;
 use proptest::prelude::*;
 
 /// Maximum `num_constraints` per OV-5 #iv. Hard cap to keep the
@@ -69,44 +69,39 @@ pub fn arb_matrices_with_assignment<F: PrimeField>(
                 Just(n_inst_explicit),
                 Just(n_wit),
                 Just(n_constraints),
-                prop::collection::vec(
-                    any::<u64>().prop_map(F::from),
-                    n_inst_explicit + n_wit,
-                ),
+                prop::collection::vec(any::<u64>().prop_map(F::from), n_inst_explicit + n_wit),
                 prop::collection::vec((0..total_vars, 0..total_vars), n_constraints),
             )
         })
-        .prop_map(
-            |(n_inst_explicit, n_wit, n_constraints, rest, rows)| {
-                let num_instance_variables = n_inst_explicit + 1;
-                let total_vars = num_instance_variables + n_wit;
-                let mut z = Vec::with_capacity(total_vars);
-                z.push(F::ONE);
-                z.extend_from_slice(&rest);
+        .prop_map(|(n_inst_explicit, n_wit, n_constraints, rest, rows)| {
+            let num_instance_variables = n_inst_explicit + 1;
+            let total_vars = num_instance_variables + n_wit;
+            let mut z = Vec::with_capacity(total_vars);
+            z.push(F::ONE);
+            z.extend_from_slice(&rest);
 
-                let mut a = Vec::with_capacity(n_constraints);
-                let mut b = Vec::with_capacity(n_constraints);
-                let mut c = Vec::with_capacity(n_constraints);
-                for (a_idx, b_idx) in rows {
-                    a.push(vec![(F::ONE, a_idx)]);
-                    b.push(vec![(F::ONE, b_idx)]);
-                    let prod = z[a_idx] * z[b_idx];
-                    c.push(vec![(prod, 0)]);
-                }
+            let mut a = Vec::with_capacity(n_constraints);
+            let mut b = Vec::with_capacity(n_constraints);
+            let mut c = Vec::with_capacity(n_constraints);
+            for (a_idx, b_idx) in rows {
+                a.push(vec![(F::ONE, a_idx)]);
+                b.push(vec![(F::ONE, b_idx)]);
+                let prod = z[a_idx] * z[b_idx];
+                c.push(vec![(prod, 0)]);
+            }
 
-                let matrices = ConstraintMatrices {
-                    num_instance_variables,
-                    num_witness_variables: n_wit,
-                    num_constraints: n_constraints,
-                    a_num_non_zero: n_constraints,
-                    b_num_non_zero: n_constraints,
-                    c_num_non_zero: n_constraints,
-                    a,
-                    b,
-                    c,
-                };
+            let matrices = ConstraintMatrices {
+                num_instance_variables,
+                num_witness_variables: n_wit,
+                num_constraints: n_constraints,
+                a_num_non_zero: n_constraints,
+                b_num_non_zero: n_constraints,
+                c_num_non_zero: n_constraints,
+                a,
+                b,
+                c,
+            };
 
-                (matrices, z)
-            },
-        )
+            (matrices, z)
+        })
 }

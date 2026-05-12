@@ -32,8 +32,7 @@ fn bls12_381_setup_prove_verify_e2e() {
     let mut rng = seeded_rng();
     let proof = prove(&arzkey, &arwtns, &mut rng).expect("prove on BLS12-381 should succeed");
 
-    let ok = verify(&arzkey, &public_inputs, &proof)
-        .expect("verify on BLS12-381 should not error");
+    let ok = verify(&arzkey, &public_inputs, &proof).expect("verify on BLS12-381 should not error");
     assert!(
         ok,
         "BLS12-381 e2e: a valid witness must produce a verifying proof"

@@ -20,8 +20,8 @@ pub fn check_r1cs_satisfaction<F: PrimeField>(
     arcs: &ArcsFile<F>,
     full_assignment: &[F],
 ) -> Result<(), ProverError> {
-    let expected_len = (arcs.header.num_instance_variables
-        + arcs.header.num_witness_variables) as usize;
+    let expected_len =
+        (arcs.header.num_instance_variables + arcs.header.num_witness_variables) as usize;
     if full_assignment.len() != expected_len {
         return Err(ProverError::WitnessLengthMismatch {
             expected: expected_len,

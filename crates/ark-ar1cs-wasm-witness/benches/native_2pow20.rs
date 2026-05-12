@@ -35,12 +35,8 @@ fn bench_native_circuit_to_arwtns_2pow20(c: &mut Criterion) {
                 seed: black_box(Fr::from(3u64)),
                 depth: black_box(20),
             };
-            let arwtns = circuit_to_arwtns(
-                circuit,
-                CurveId::Bn254,
-                EMBEDDED_LARGE_AR1CS_BLAKE3,
-            )
-            .expect("native circuit_to_arwtns failed");
+            let arwtns = circuit_to_arwtns(circuit, CurveId::Bn254, EMBEDDED_LARGE_AR1CS_BLAKE3)
+                .expect("native circuit_to_arwtns failed");
             black_box(arwtns);
         });
     });

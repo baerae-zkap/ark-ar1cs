@@ -8,7 +8,10 @@ pub enum ArcsError {
     UnsupportedVersion(u8),
     UnsupportedCurve(u8),
     /// The file's curve ID doesn't match what the caller expected.
-    CurveIdMismatch { expected: CurveId, found: CurveId },
+    CurveIdMismatch {
+        expected: CurveId,
+        found: CurveId,
+    },
     /// A reserved header byte was non-zero. Readers reject so each circuit
     /// has exactly one canonical `.ar1cs` byte sequence.
     ReservedNotZero,
@@ -28,7 +31,10 @@ impl fmt::Display for ArcsError {
             ArcsError::UnsupportedVersion(v) => write!(f, "unsupported version: {v:#x}"),
             ArcsError::UnsupportedCurve(c) => write!(f, "unsupported curve ID: {c:#x}"),
             ArcsError::CurveIdMismatch { expected, found } => {
-                write!(f, "curve ID mismatch: expected {expected:?}, found {found:?}")
+                write!(
+                    f,
+                    "curve ID mismatch: expected {expected:?}, found {found:?}"
+                )
             }
             ArcsError::ReservedNotZero => write!(f, "reserved header byte must be zero"),
             ArcsError::ValidationFailed(msg) => write!(f, "validation failed: {msg}"),

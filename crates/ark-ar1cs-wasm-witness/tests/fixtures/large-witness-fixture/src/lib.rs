@@ -19,6 +19,6 @@ extern crate alloc;
 use ark_ar1cs_wasm_witness::mock::{LargeMockGenerator, EMBEDDED_LARGE_AR1CS_BLAKE3};
 
 ark_ar1cs_wasm_witness::export_witness_generator!(
-    generator       = LargeMockGenerator,
+    generator = LargeMockGenerator,
     embedded_blake3 = EMBEDDED_LARGE_AR1CS_BLAKE3,
 );

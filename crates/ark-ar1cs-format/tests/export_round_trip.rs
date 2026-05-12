@@ -52,7 +52,10 @@ fn seeded_rng() -> StdRng {
 
 fn setup_circuit() -> SquareCircuit {
     // In setup mode the closures aren't called; values don't matter.
-    SquareCircuit { x: None, y: Fr::from(0u64) }
+    SquareCircuit {
+        x: None,
+        y: Fr::from(0u64),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -62,7 +65,9 @@ fn setup_circuit() -> SquareCircuit {
 /// The exported file must produce the same ConstraintMatrices as direct synthesis.
 #[test]
 fn exported_matrices_match_original() {
-    use ark_relations::gr1cs::{ConstraintSystem, ConstraintSynthesizer, OptimizationGoal, SynthesisMode};
+    use ark_relations::gr1cs::{
+        ConstraintSynthesizer, ConstraintSystem, OptimizationGoal, SynthesisMode,
+    };
 
     // Synthesize directly
     let cs1 = ConstraintSystem::<Fr>::new_ref();
@@ -84,9 +89,18 @@ fn exported_matrices_match_original() {
     cs2.finalize();
     let matrices_imported = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs2).unwrap();
 
-    assert_eq!(matrices_direct.num_instance_variables, matrices_imported.num_instance_variables);
-    assert_eq!(matrices_direct.num_witness_variables,  matrices_imported.num_witness_variables);
-    assert_eq!(matrices_direct.num_constraints,        matrices_imported.num_constraints);
+    assert_eq!(
+        matrices_direct.num_instance_variables,
+        matrices_imported.num_instance_variables
+    );
+    assert_eq!(
+        matrices_direct.num_witness_variables,
+        matrices_imported.num_witness_variables
+    );
+    assert_eq!(
+        matrices_direct.num_constraints,
+        matrices_imported.num_constraints
+    );
     assert_eq!(matrices_direct.a, matrices_imported.a, "matrix A");
     assert_eq!(matrices_direct.b, matrices_imported.b, "matrix B");
     assert_eq!(matrices_direct.c, matrices_imported.c, "matrix C");
@@ -105,15 +119,14 @@ fn proving_keys_match() {
 
     // --- export ---
     let mut buf = Vec::new();
-    export_circuit::<Fr, _, _>(setup_circuit(), CurveId::Bn254, &mut buf)
-        .expect("export failed");
+    export_circuit::<Fr, _, _>(setup_circuit(), CurveId::Bn254, &mut buf).expect("export failed");
 
     // --- setup from imported circuit (same seed) ---
     let imported = ImportedCircuit::<Fr>::from_reader(&mut buf.as_slice(), CurveId::Bn254)
         .expect("import failed");
     let pk_imported = Groth16::<Bn254>::generate_random_parameters_with_reduction(
         imported,
-        &mut seeded_rng(),  // identical seed → identical toxic waste
+        &mut seeded_rng(), // identical seed → identical toxic waste
     )
     .expect("setup from imported circuit failed");
 

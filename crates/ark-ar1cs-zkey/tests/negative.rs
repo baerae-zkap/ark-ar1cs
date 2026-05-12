@@ -70,11 +70,8 @@ fn extract_arcs() -> ArcsFile<Fr> {
 
 fn make_valid_file_bytes() -> Vec<u8> {
     let mut rng = ark_std::test_rng();
-    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(
-        setup_circuit(),
-        &mut rng,
-    )
-    .unwrap();
+    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
+        .unwrap();
     let arzkey = ArzkeyFile::<Bn254>::from_setup_output(extract_arcs(), pk);
     let mut buf = Vec::new();
     arzkey.write(&mut buf).unwrap();
@@ -127,8 +124,7 @@ fn rejects_non_zero_reserved() {
     let mut buf = make_valid_file_bytes();
     buf[RESERVED_OFFSET] = 0x01;
     recompute_trailer(&mut buf);
-    let err =
-        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected ReservedNotZero");
+    let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected ReservedNotZero");
     assert!(matches!(err, ArzkeyError::ReservedNotZero), "got: {err:?}");
 }
 
@@ -139,8 +135,7 @@ fn rejects_curve_mismatch() {
     let mut buf = make_valid_file_bytes();
     buf[CURVE_ID_OFFSET] = 0x02;
     recompute_trailer(&mut buf);
-    let err =
-        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected CurveMismatch");
+    let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected CurveMismatch");
     assert!(
         matches!(
             err,
@@ -164,8 +159,8 @@ fn rejects_ar1cs_length_mismatch() {
     let bogus = body_remaining + 1000;
     buf[AR1CS_BYTE_LEN_OFFSET..AR1CS_BYTE_LEN_OFFSET + 8].copy_from_slice(&bogus.to_le_bytes());
     recompute_trailer(&mut buf);
-    let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice())
-        .expect_err("expected Ar1csLengthMismatch");
+    let err =
+        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected Ar1csLengthMismatch");
     assert!(
         matches!(err, ArzkeyError::Ar1csLengthMismatch { .. }),
         "got: {err:?}"
@@ -182,8 +177,8 @@ fn rejects_vk_length_mismatch() {
     let bogus = body_after_ar1cs + 100;
     buf[VK_BYTE_LEN_OFFSET..VK_BYTE_LEN_OFFSET + 8].copy_from_slice(&bogus.to_le_bytes());
     recompute_trailer(&mut buf);
-    let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice())
-        .expect_err("expected VkLengthMismatch");
+    let err =
+        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected VkLengthMismatch");
     assert!(
         matches!(err, ArzkeyError::VkLengthMismatch { .. }),
         "got: {err:?}"
@@ -196,14 +191,13 @@ fn rejects_pk_length_mismatch() {
     let mut buf = make_valid_file_bytes();
     let ar1cs_byte_len = read_u64_le(&buf, AR1CS_BYTE_LEN_OFFSET);
     let vk_byte_len = read_u64_le(&buf, VK_BYTE_LEN_OFFSET);
-    let pk_remaining = (buf.len() - TRAILER_LEN - HEADER_SIZE) as u64
-        - ar1cs_byte_len
-        - vk_byte_len;
+    let pk_remaining =
+        (buf.len() - TRAILER_LEN - HEADER_SIZE) as u64 - ar1cs_byte_len - vk_byte_len;
     let bogus = pk_remaining + 100;
     buf[PK_BYTE_LEN_OFFSET..PK_BYTE_LEN_OFFSET + 8].copy_from_slice(&bogus.to_le_bytes());
     recompute_trailer(&mut buf);
-    let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice())
-        .expect_err("expected PkLengthMismatch");
+    let err =
+        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected PkLengthMismatch");
     assert!(
         matches!(err, ArzkeyError::PkLengthMismatch { .. }),
         "got: {err:?}"
@@ -215,8 +209,8 @@ fn rejects_ar1cs_blake3_mismatch() {
     let mut buf = make_valid_file_bytes();
     buf[AR1CS_BLAKE3_OFFSET] ^= 0x01;
     recompute_trailer(&mut buf);
-    let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice())
-        .expect_err("expected Ar1csBlake3Mismatch");
+    let err =
+        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected Ar1csBlake3Mismatch");
     assert!(
         matches!(err, ArzkeyError::Ar1csBlake3Mismatch),
         "got: {err:?}"
@@ -228,8 +222,8 @@ fn rejects_vk_blake3_mismatch() {
     let mut buf = make_valid_file_bytes();
     buf[VK_BLAKE3_OFFSET] ^= 0x01;
     recompute_trailer(&mut buf);
-    let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice())
-        .expect_err("expected VkBlake3Mismatch");
+    let err =
+        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected VkBlake3Mismatch");
     assert!(matches!(err, ArzkeyError::VkBlake3Mismatch), "got: {err:?}");
 }
 
@@ -244,22 +238,21 @@ fn rejects_vk_blake3_mismatch() {
 #[test]
 fn rejects_vk_duplication_drift() {
     let mut rng1 = StdRng::from_seed([1u8; 32]);
-    let pk1 = Groth16::<Bn254>::generate_random_parameters_with_reduction(
-        setup_circuit(),
-        &mut rng1,
-    )
-    .unwrap();
+    let pk1 =
+        Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng1)
+            .unwrap();
     let arzkey1 = ArzkeyFile::<Bn254>::from_setup_output(extract_arcs(), pk1);
     let mut buf = Vec::new();
     arzkey1.write(&mut buf).unwrap();
 
     let mut rng2 = StdRng::from_seed([2u8; 32]);
-    let pk2 = Groth16::<Bn254>::generate_random_parameters_with_reduction(
-        setup_circuit(),
-        &mut rng2,
-    )
-    .unwrap();
-    assert_ne!(pk2.vk, arzkey1.vk, "two ceremonies must produce distinct VKs");
+    let pk2 =
+        Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng2)
+            .unwrap();
+    assert_ne!(
+        pk2.vk, arzkey1.vk,
+        "two ceremonies must produce distinct VKs"
+    );
 
     // The V1 writer emits PK uncompressed; the byte-level swap below
     // therefore needs an uncompressed PK encoding so pk_byte_len in the
@@ -271,7 +264,8 @@ fn rejects_vk_duplication_drift() {
     let vk_byte_len = read_u64_le(&buf, VK_BYTE_LEN_OFFSET);
     let pk_byte_len = read_u64_le(&buf, PK_BYTE_LEN_OFFSET);
     assert_eq!(
-        pk_byte_len, pk2_bytes.len() as u64,
+        pk_byte_len,
+        pk2_bytes.len() as u64,
         "PK serialization size must match for byte-level swap"
     );
 
@@ -280,8 +274,8 @@ fn rejects_vk_duplication_drift() {
     buf[pk_start..pk_end].copy_from_slice(&pk2_bytes);
     recompute_trailer(&mut buf);
 
-    let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice())
-        .expect_err("expected VkDuplicationDrift");
+    let err =
+        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected VkDuplicationDrift");
     assert!(
         matches!(err, ArzkeyError::VkDuplicationDrift),
         "got: {err:?}"
@@ -314,9 +308,11 @@ fn rejects_trailing_bytes() {
     buf.extend_from_slice(&[0u8; 16]);
     buf.extend_from_slice(&trailer);
     recompute_trailer(&mut buf);
-    let err =
-        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected TrailingBytes");
-    assert!(matches!(err, ArzkeyError::TrailingBytes(16)), "got: {err:?}");
+    let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected TrailingBytes");
+    assert!(
+        matches!(err, ArzkeyError::TrailingBytes(16)),
+        "got: {err:?}"
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -326,8 +322,7 @@ fn rejects_trailing_bytes() {
 #[test]
 fn rejects_oversize_ar1cs_byte_len() {
     let mut buf = make_valid_file_bytes();
-    buf[AR1CS_BYTE_LEN_OFFSET..AR1CS_BYTE_LEN_OFFSET + 8]
-        .copy_from_slice(&u64::MAX.to_le_bytes());
+    buf[AR1CS_BYTE_LEN_OFFSET..AR1CS_BYTE_LEN_OFFSET + 8].copy_from_slice(&u64::MAX.to_le_bytes());
     recompute_trailer(&mut buf);
     let err = ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect_err("expected FileTooLarge");
     assert!(matches!(err, ArzkeyError::FileTooLarge), "got: {err:?}");
@@ -363,11 +358,8 @@ fn validate_rejects_count_mismatch() {
     // path enforces consistency structurally, so this fires only after
     // manual mutation.
     let mut rng = ark_std::test_rng();
-    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(
-        setup_circuit(),
-        &mut rng,
-    )
-    .unwrap();
+    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
+        .unwrap();
     let mut arzkey = ArzkeyFile::<Bn254>::from_setup_output(extract_arcs(), pk);
     arzkey.header.num_constraints = 999;
 

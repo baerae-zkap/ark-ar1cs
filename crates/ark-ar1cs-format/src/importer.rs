@@ -30,10 +30,7 @@ impl<F: PrimeField> ImportedCircuit<F> {
     ///
     /// Returns `ArcsError::CurveIdMismatch` if the file was produced for a
     /// different curve, preventing silent field-element misinterpretation.
-    pub fn from_reader<R: Read>(
-        r: &mut R,
-        expected_curve_id: CurveId,
-    ) -> Result<Self, ArcsError> {
+    pub fn from_reader<R: Read>(r: &mut R, expected_curve_id: CurveId) -> Result<Self, ArcsError> {
         let file = ArcsFile::read(r)?;
         if file.header.curve_id != expected_curve_id {
             return Err(ArcsError::CurveIdMismatch {

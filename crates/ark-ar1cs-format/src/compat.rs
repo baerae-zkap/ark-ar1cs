@@ -8,7 +8,7 @@
 //! export/import path can stay unchanged.
 use ark_ff::PrimeField;
 use ark_relations::gr1cs::{
-    ConstraintSystemRef, R1CS_PREDICATE_LABEL, Result as Gr1csResult, SynthesisError,
+    ConstraintSystemRef, Result as Gr1csResult, SynthesisError, R1CS_PREDICATE_LABEL,
 };
 
 use crate::matrix::Matrix;
