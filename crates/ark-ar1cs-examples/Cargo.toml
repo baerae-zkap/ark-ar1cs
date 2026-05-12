@@ -21,3 +21,6 @@ ark-relations    = { workspace = true }
 ark-serialize    = { workspace = true }
 ark-std          = { workspace = true }
 rand             = { workspace = true }
+
+[lints]
+workspace = true
