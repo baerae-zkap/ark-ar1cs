@@ -52,11 +52,8 @@ fn extract_arcs() -> ArcsFile<Fr> {
 fn round_trip_bn254() {
     let mut rng = ark_std::test_rng();
 
-    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(
-        setup_circuit(),
-        &mut rng,
-    )
-    .expect("Groth16 setup failed");
+    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
+        .expect("Groth16 setup failed");
 
     let arcs = extract_arcs();
     let original = ArzkeyFile::<Bn254>::from_setup_output(arcs.clone(), pk.clone());
@@ -64,8 +61,7 @@ fn round_trip_bn254() {
     let mut buf = Vec::new();
     original.write(&mut buf).expect("write failed");
 
-    let recovered =
-        ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect("read failed");
+    let recovered = ArzkeyFile::<Bn254>::read(&mut buf.as_slice()).expect("read failed");
 
     assert_eq!(original.header, recovered.header, "header mismatch");
     assert_eq!(original.arcs, recovered.arcs, "embedded arcs mismatch");
@@ -76,11 +72,8 @@ fn round_trip_bn254() {
 #[test]
 fn from_setup_output_derives_vk_from_pk() {
     let mut rng = ark_std::test_rng();
-    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(
-        setup_circuit(),
-        &mut rng,
-    )
-    .unwrap();
+    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
+        .unwrap();
 
     let arcs = extract_arcs();
     let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk.clone());
@@ -94,11 +87,8 @@ fn from_setup_output_derives_vk_from_pk() {
 #[test]
 fn validate_passes_after_construction() {
     let mut rng = ark_std::test_rng();
-    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(
-        setup_circuit(),
-        &mut rng,
-    )
-    .unwrap();
+    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
+        .unwrap();
     let arcs = extract_arcs();
     let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
     arzkey.validate().expect("validate should pass");
@@ -109,11 +99,8 @@ fn vk_extraction_via_serialize_compressed() {
     use ark_serialize::CanonicalSerialize;
 
     let mut rng = ark_std::test_rng();
-    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(
-        setup_circuit(),
-        &mut rng,
-    )
-    .unwrap();
+    let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
+        .unwrap();
     let arcs = extract_arcs();
     let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
 

@@ -82,8 +82,8 @@ struct ChainedSquares {
 impl ConstraintSynthesizer<Fr> for ChainedSquares {
     fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
         let final_var = cs.new_input_variable(|| Ok(self.final_y))?;
-        let mut current = cs
-            .new_witness_variable(|| self.initial.ok_or(SynthesisError::AssignmentMissing))?;
+        let mut current =
+            cs.new_witness_variable(|| self.initial.ok_or(SynthesisError::AssignmentMissing))?;
         for i in 0..self.num_iter {
             let next: Variable = if i + 1 == self.num_iter {
                 final_var
@@ -113,7 +113,8 @@ fn build_arzkey<C: ConstraintSynthesizer<Fr> + Clone>(circuit: C) -> ArzkeyFile<
         .generate_constraints(cs.clone())
         .expect("synthesize for matrices should not fail");
     cs.finalize();
-    let matrices = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices() should not fail");
+    let matrices =
+        ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices() should not fail");
     let arcs = ArcsFile::<Fr>::from_matrices(CurveId::Bn254, &matrices);
     ArzkeyFile::<Bn254>::from_setup_output(arcs, pk)
 }
@@ -245,9 +246,7 @@ fn partial_read_scales_to_a_realistic_arzkey() {
 
     let tmp = write_arzkey_to_tempfile(&arzkey);
 
-    let on_disk = std::fs::metadata(tmp.path())
-        .expect("stat tempfile")
-        .len();
+    let on_disk = std::fs::metadata(tmp.path()).expect("stat tempfile").len();
     eprintln!(
         "partial_read_scales_to_a_realistic_arzkey: file size = {on_disk} bytes \
          (ar1cs = {ar1cs}, vk = {vk}, pk = {pk})",

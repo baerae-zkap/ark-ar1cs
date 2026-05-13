@@ -39,8 +39,7 @@ struct SquareCircuit<F: PrimeField> {
 impl<F: PrimeField> ConstraintSynthesizer<F> for SquareCircuit<F> {
     fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
         let y_var = cs.new_input_variable(|| Ok(self.y))?;
-        let x_var =
-            cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
+        let x_var = cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
         cs.enforce_r1cs_constraint(
             || LinearCombination::from(x_var),
             || LinearCombination::from(x_var),
@@ -87,12 +86,7 @@ fn run_curve<E: Pairing>(curve_id: CurveId, x_value: u64) -> Result<bool, Box<dy
     let ar1cs_blake3 = arcs.body_blake3();
     let arzkey = ArzkeyFile::<E>::from_setup_output(arcs, pk);
 
-    let arwtns = ArwtnsFile::<E::ScalarField>::from_assignments(
-        curve_id,
-        ar1cs_blake3,
-        &[y],
-        &[x],
-    );
+    let arwtns = ArwtnsFile::<E::ScalarField>::from_assignments(curve_id, ar1cs_blake3, &[y], &[x]);
 
     let proof = prove(&arzkey, &arwtns, &mut rng)?;
     let ok = verify(&arzkey, &[y], &proof)?;
@@ -101,15 +95,24 @@ fn run_curve<E: Pairing>(curve_id: CurveId, x_value: u64) -> Result<bool, Box<dy
 
 fn main() -> Result<(), Box<dyn Error>> {
     let bn254_ok = run_curve::<Bn254>(CurveId::Bn254, 3)?;
-    println!("BN254       (CurveId=0x{:02x}): verify → {bn254_ok}", CurveId::Bn254 as u8);
-    assert!(bn254_ok, "BN254: a valid witness must produce a verifying proof");
+    println!(
+        "BN254       (CurveId=0x{:02x}): verify → {bn254_ok}",
+        CurveId::Bn254 as u8
+    );
+    assert!(
+        bn254_ok,
+        "BN254: a valid witness must produce a verifying proof"
+    );
 
     let bls_ok = run_curve::<Bls12_381>(CurveId::Bls12_381, 17)?;
     println!(
         "BLS12-381   (CurveId=0x{:02x}): verify → {bls_ok}",
         CurveId::Bls12_381 as u8,
     );
-    assert!(bls_ok, "BLS12-381: a valid witness must produce a verifying proof");
+    assert!(
+        bls_ok,
+        "BLS12-381: a valid witness must produce a verifying proof"
+    );
 
     Ok(())
 }

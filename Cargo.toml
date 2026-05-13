@@ -9,3 +9,37 @@ members = [
     "crates/ark-ar1cs-zkey",
 ]
 resolver = "2"
+
+[workspace.package]
+edition    = "2021"
+license    = "MIT OR Apache-2.0"
+repository = "https://github.com/snp-labs/ark-ar1cs"
+version    = "0.1.0"
+
+[workspace.dependencies]
+# arkworks 0.6 family. Default features stay on, mirroring the pre-redesign
+# per-member specs (`ark-* = "0.6"`). Member dev-deps that need `std` keep
+# their `features = ["std"]` override as before.
+ark-bls12-381 = { version = "0.6" }
+ark-bn254     = { version = "0.6" }
+ark-ec        = { version = "0.6" }
+ark-ff        = { version = "0.6" }
+ark-groth16   = { version = "0.6" }
+ark-relations = { version = "0.6" }
+ark-serialize = { version = "0.6" }
+ark-std       = { version = "0.6" }
+
+blake3        = { version = "1" }
+# postcard + serde are explicitly no-std in the source tree (wasm-witness
+# crates them this way) — preserve that opt-out at the workspace level.
+postcard      = { version = "1", default-features = false, features = ["alloc"] }
+proptest      = { version = "1" }
+rand          = { version = "0.8" }
+serde         = { version = "1", default-features = false, features = ["derive", "alloc"] }
+tempfile      = { version = "3" }
+thiserror     = { version = "2" }
+
+# [workspace.lints] deferred to Stream 3: CI uses `cargo clippy --all -- -D warnings`
+# (.github/workflows/ci.yml:35), so introducing `warn` lints here would immediately
+# break CI. Stream 3 audits existing unwrap/expect/missing-doc sites first, then
+# introduces a workspace lint policy that the codebase already satisfies.

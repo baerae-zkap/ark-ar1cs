@@ -66,9 +66,9 @@ pub fn read_matrix<F: PrimeField, R: Read>(
         let num_entries = u64::from_le_bytes(buf) as usize;
 
         // Budget check: reject before allocating if this row would exceed budget.
-        total_entries = total_entries.checked_add(num_entries).ok_or_else(|| {
-            ArcsError::ValidationFailed("non-zero entry count overflow".into())
-        })?;
+        total_entries = total_entries
+            .checked_add(num_entries)
+            .ok_or_else(|| ArcsError::ValidationFailed("non-zero entry count overflow".into()))?;
         if total_entries > expected_nz {
             return Err(ArcsError::ValidationFailed(format!(
                 "non-zero entries exceed header count {expected_nz}"

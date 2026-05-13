@@ -86,8 +86,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         out_path.display(),
         out_size as f64 / 1024.0 / 1024.0
     );
-    println!("  ar1cs_blake3 (circuit identity) = {}", hex(&arzkey.header.ar1cs_blake3));
-    println!("  vk_blake3                       = {}", hex(&arzkey.header.vk_blake3));
+    println!(
+        "  ar1cs_blake3 (circuit identity) = {}",
+        hex(&arzkey.header.ar1cs_blake3)
+    );
+    println!(
+        "  vk_blake3                       = {}",
+        hex(&arzkey.header.vk_blake3)
+    );
     Ok(())
 }
 

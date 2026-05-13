@@ -62,10 +62,7 @@ pub struct MockCircuit {
 }
 
 impl ConstraintSynthesizer<Fr> for MockCircuit {
-    fn generate_constraints(
-        self,
-        cs: ConstraintSystemRef<Fr>,
-    ) -> Result<(), SynthesisError> {
+    fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
         let z = cs.new_input_variable(|| Ok(self.z))?;
         let x = cs.new_witness_variable(|| Ok(self.x))?;
         let y = cs.new_witness_variable(|| Ok(self.y))?;
@@ -144,10 +141,7 @@ pub struct LargeMockCircuit {
 }
 
 impl ConstraintSynthesizer<Fr> for LargeMockCircuit {
-    fn generate_constraints(
-        self,
-        cs: ConstraintSystemRef<Fr>,
-    ) -> Result<(), SynthesisError> {
+    fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
         let n: u64 = 1u64 << self.depth;
         // Pre-compute `x_0 .. x_N` so we can allocate the public input
         // (which arkworks requires before any witness) with the final
@@ -265,10 +259,7 @@ mod tests {
 
     #[test]
     fn large_generator_rejects_excessive_depth() {
-        let err = LargeMockGenerator::build_circuit(LargeMockInput {
-            seed: 1,
-            depth: 25,
-        });
+        let err = LargeMockGenerator::build_circuit(LargeMockInput { seed: 1, depth: 25 });
         assert!(err.is_err());
     }
 
@@ -292,8 +283,7 @@ mod tests {
         .expect("native witness gen failed");
 
         let mut cur = std::io::Cursor::new(&arwtns_bytes);
-        let arwtns: ArwtnsFile<Fr> =
-            ArwtnsFile::read(&mut cur).expect("arwtns read failed");
+        let arwtns: ArwtnsFile<Fr> = ArwtnsFile::read(&mut cur).expect("arwtns read failed");
 
         assert_eq!(arwtns.witness.len(), n);
         assert_eq!(arwtns.instance.len(), 1);

@@ -44,8 +44,7 @@ fn rejects_unsupported_version() {
     let mut buf = make_valid_file();
     buf[6] = 0x01;
     recompute_trailer(&mut buf);
-    let err =
-        ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected UnsupportedVersion");
+    let err = ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected UnsupportedVersion");
     assert!(
         matches!(err, ArwtnsError::UnsupportedVersion(0x01)),
         "got: {err:?}"
@@ -57,8 +56,7 @@ fn rejects_unsupported_curve() {
     let mut buf = make_valid_file();
     buf[7] = 0xFF;
     recompute_trailer(&mut buf);
-    let err =
-        ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected unsupported curve");
+    let err = ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected unsupported curve");
     assert!(
         matches!(err, ArwtnsError::Format(ArcsError::UnsupportedCurve(0xFF))),
         "got: {err:?}"
@@ -70,8 +68,7 @@ fn rejects_non_zero_reserved() {
     let mut buf = make_valid_file();
     buf[8] = 0x01; // first byte of reserved[8]
     recompute_trailer(&mut buf);
-    let err =
-        ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected ReservedNotZero");
+    let err = ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected ReservedNotZero");
     assert!(matches!(err, ArwtnsError::ReservedNotZero), "got: {err:?}");
 }
 
@@ -80,8 +77,7 @@ fn rejects_corrupted_trailer() {
     let mut buf = make_valid_file();
     let last = buf.len() - 1;
     buf[last] ^= 0xFF;
-    let err =
-        ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected ChecksumMismatch");
+    let err = ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected ChecksumMismatch");
     assert!(matches!(err, ArwtnsError::ChecksumMismatch), "got: {err:?}");
 }
 
@@ -101,11 +97,9 @@ fn rejects_oversize_counts_before_alloc() {
     // TEST-3: num_instance = u64::MAX overflows checked_add(num_witness)
     // → reader returns FileTooLarge BEFORE any Vec::with_capacity.
     let mut buf = make_valid_file();
-    buf[NUM_INSTANCE_OFFSET..NUM_INSTANCE_OFFSET + 8]
-        .copy_from_slice(&u64::MAX.to_le_bytes());
+    buf[NUM_INSTANCE_OFFSET..NUM_INSTANCE_OFFSET + 8].copy_from_slice(&u64::MAX.to_le_bytes());
     recompute_trailer(&mut buf);
-    let err =
-        ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected FileTooLarge");
+    let err = ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected FileTooLarge");
     assert!(matches!(err, ArwtnsError::FileTooLarge), "got: {err:?}");
 }
 
@@ -114,11 +108,9 @@ fn rejects_counts_exceeding_stream_remaining() {
     // Header claims 100 instance elements, body only has 5 elements total.
     // Reader rejects with BodyLengthMismatch BEFORE allocating Vec<F>.
     let mut buf = make_valid_file();
-    buf[NUM_INSTANCE_OFFSET..NUM_INSTANCE_OFFSET + 8]
-        .copy_from_slice(&100u64.to_le_bytes());
+    buf[NUM_INSTANCE_OFFSET..NUM_INSTANCE_OFFSET + 8].copy_from_slice(&100u64.to_le_bytes());
     recompute_trailer(&mut buf);
-    let err = ArwtnsFile::<Fr>::read(&mut buf.as_slice())
-        .expect_err("expected BodyLengthMismatch");
+    let err = ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected BodyLengthMismatch");
     assert!(
         matches!(err, ArwtnsError::BodyLengthMismatch { .. }),
         "got: {err:?}"
@@ -137,8 +129,7 @@ fn rejects_extra_body_bytes() {
     buf.extend_from_slice(&[0u8; 32]);
     buf.extend_from_slice(&trailer);
     recompute_trailer(&mut buf);
-    let err = ArwtnsFile::<Fr>::read(&mut buf.as_slice())
-        .expect_err("expected BodyLengthMismatch");
+    let err = ArwtnsFile::<Fr>::read(&mut buf.as_slice()).expect_err("expected BodyLengthMismatch");
     assert!(
         matches!(err, ArwtnsError::BodyLengthMismatch { .. }),
         "got: {err:?}"

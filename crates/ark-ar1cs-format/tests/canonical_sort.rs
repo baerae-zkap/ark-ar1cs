@@ -6,9 +6,9 @@
 /// `body_blake3()` values. `body_blake3()` itself returns the same 32 bytes
 /// the writer appends as trailer.
 use ark_ar1cs_format::test_fixtures::make_test_matrices;
+use ark_ar1cs_format::ConstraintMatrices;
 use ark_ar1cs_format::{ArcsFile, CurveId};
 use ark_bn254::Fr;
-use ark_ar1cs_format::ConstraintMatrices;
 
 fn matrices_with_row_a(row: Vec<(Fr, usize)>) -> ConstraintMatrices<Fr> {
     ConstraintMatrices {
@@ -39,8 +39,7 @@ fn canonical_sort_within_row_byte_identical() {
     ];
 
     let f_asc = ArcsFile::from_matrices(CurveId::Bn254, &matrices_with_row_a(asc));
-    let f_scrambled =
-        ArcsFile::from_matrices(CurveId::Bn254, &matrices_with_row_a(scrambled));
+    let f_scrambled = ArcsFile::from_matrices(CurveId::Bn254, &matrices_with_row_a(scrambled));
 
     let mut b_asc = Vec::new();
     f_asc.write(&mut b_asc).unwrap();

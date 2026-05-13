@@ -58,8 +58,7 @@ struct SquareCircuit {
 impl ConstraintSynthesizer<Fr> for SquareCircuit {
     fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
         let y_var = cs.new_input_variable(|| Ok(self.y))?;
-        let x_var =
-            cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
+        let x_var = cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
         cs.enforce_r1cs_constraint(
             || LinearCombination::from(x_var),
             || LinearCombination::from(x_var),

@@ -123,9 +123,7 @@ macro_rules! __export_witness_generator_inner {
         ) -> i32 {
             // SAFETY: out-pointers are host-owned writable slots by ABI
             // contract; the embedded constant is a 32-byte array.
-            unsafe {
-                $crate::abi::return_owned_buffer(&$blake3, out_ptr_out, out_len_out).as_i32()
-            }
+            unsafe { $crate::abi::return_owned_buffer(&$blake3, out_ptr_out, out_len_out).as_i32() }
         }
 
         #[cfg(target_arch = "wasm32")]
@@ -192,14 +190,11 @@ pub unsafe fn __witness_generator_export<G: WitnessGenerator>(
         Ok(c) => c,
         Err(e) => return e.into(),
     };
-    let arwtns = match crate::circuit_to_arwtns::<G::Field, G::Circuit>(
-        circuit,
-        G::CURVE_ID,
-        *embedded,
-    ) {
-        Ok(a) => a,
-        Err(e) => return WitnessAbiCode::from(e),
-    };
+    let arwtns =
+        match crate::circuit_to_arwtns::<G::Field, G::Circuit>(circuit, G::CURVE_ID, *embedded) {
+            Ok(a) => a,
+            Err(e) => return WitnessAbiCode::from(e),
+        };
     // SAFETY: out-pointer contract delegated to caller.
     unsafe { crate::abi::return_arwtns(&arwtns, out_ptr_out, out_len_out) }
 }
@@ -228,10 +223,7 @@ mod tests {
     }
 
     impl ConstraintSynthesizer<Fr> for ToyCircuit {
-        fn generate_constraints(
-            self,
-            cs: ConstraintSystemRef<Fr>,
-        ) -> Result<(), SynthesisError> {
+        fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
             let z = cs.new_input_variable(|| Ok(self.z))?;
             let x = cs.new_witness_variable(|| Ok(self.x))?;
             let y = cs.new_witness_variable(|| Ok(self.y))?;
@@ -278,8 +270,7 @@ mod tests {
         let blake3 = [0xAB; 32];
         let input = ToyInput { x: 6, y: 7 };
         let bytes = postcard::to_allocvec(&input).unwrap();
-        let out =
-            witness_generator_native::<ToyGenerator>(&bytes, &blake3, &blake3).unwrap();
+        let out = witness_generator_native::<ToyGenerator>(&bytes, &blake3, &blake3).unwrap();
         let mut cursor = std::io::Cursor::new(&out);
         let arwtns: ArwtnsFile<Fr> = ArwtnsFile::read(&mut cursor).unwrap();
         assert_eq!(arwtns.header.ar1cs_blake3, blake3);
@@ -292,8 +283,7 @@ mod tests {
         let embedded = [0xAB; 32];
         let host = [0xCD; 32];
         let bytes = postcard::to_allocvec(&ToyInput { x: 1, y: 2 }).unwrap();
-        let err =
-            witness_generator_native::<ToyGenerator>(&bytes, &host, &embedded).unwrap_err();
+        let err = witness_generator_native::<ToyGenerator>(&bytes, &host, &embedded).unwrap_err();
         assert_eq!(err, WitnessAbiCode::Blake3Mismatch);
     }
 
@@ -308,8 +298,7 @@ mod tests {
     fn native_path_rejects_postcard_garbage() {
         let blake3 = [0; 32];
         // Garbage bytes too short to be valid postcard for ToyInput.
-        let err =
-            witness_generator_native::<ToyGenerator>(&[0xff], &blake3, &blake3).unwrap_err();
+        let err = witness_generator_native::<ToyGenerator>(&[0xff], &blake3, &blake3).unwrap_err();
         assert_eq!(err, WitnessAbiCode::PostcardDecodeError);
     }
 }

@@ -1,10 +1,10 @@
 /// Importer tests: replay, curve-ID guard, and edge cases.
 use ark_ar1cs_format::importer::ImportedCircuit;
 use ark_ar1cs_format::test_fixtures::make_test_matrices;
+use ark_ar1cs_format::ConstraintMatrices;
 use ark_ar1cs_format::{ArcsError, ArcsFile, CurveId};
 use ark_bn254::Fr;
-use ark_ar1cs_format::ConstraintMatrices;
-use ark_relations::gr1cs::{ConstraintSystem, ConstraintSynthesizer};
+use ark_relations::gr1cs::{ConstraintSynthesizer, ConstraintSystem};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -31,9 +31,8 @@ fn imported_circuit_produces_same_matrices() {
     let mut buf = Vec::new();
     file.write(&mut buf).expect("serialize failed");
 
-    let circuit =
-        ImportedCircuit::<Fr>::from_reader(&mut buf.as_slice(), CurveId::Bn254)
-            .expect("import failed");
+    let circuit = ImportedCircuit::<Fr>::from_reader(&mut buf.as_slice(), CurveId::Bn254)
+        .expect("import failed");
 
     let cs = ConstraintSystem::<Fr>::new_ref();
     circuit
@@ -43,8 +42,14 @@ fn imported_circuit_produces_same_matrices() {
 
     let recovered = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices failed");
 
-    assert_eq!(original.num_instance_variables, recovered.num_instance_variables);
-    assert_eq!(original.num_witness_variables, recovered.num_witness_variables);
+    assert_eq!(
+        original.num_instance_variables,
+        recovered.num_instance_variables
+    );
+    assert_eq!(
+        original.num_witness_variables,
+        recovered.num_witness_variables
+    );
     assert_eq!(original.num_constraints, recovered.num_constraints);
     assert_eq!(original.a_num_non_zero, recovered.a_num_non_zero);
     assert_eq!(original.b_num_non_zero, recovered.b_num_non_zero);
@@ -128,7 +133,9 @@ fn num_instance_one_no_explicit_inputs() {
     let circuit = ImportedCircuit::<Fr>::from_reader(&mut buf.as_slice(), CurveId::Bn254)
         .expect("import failed");
     let cs = ConstraintSystem::<Fr>::new_ref();
-    circuit.generate_constraints(cs.clone()).expect("generate_constraints failed");
+    circuit
+        .generate_constraints(cs.clone())
+        .expect("generate_constraints failed");
     cs.finalize();
 
     let recovered = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices failed");
@@ -165,7 +172,9 @@ fn num_witness_zero() {
     let circuit = ImportedCircuit::<Fr>::from_reader(&mut buf.as_slice(), CurveId::Bn254)
         .expect("import failed");
     let cs = ConstraintSystem::<Fr>::new_ref();
-    circuit.generate_constraints(cs.clone()).expect("generate_constraints failed");
+    circuit
+        .generate_constraints(cs.clone())
+        .expect("generate_constraints failed");
     cs.finalize();
 
     let recovered = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs).expect("to_matrices failed");

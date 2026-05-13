@@ -13,6 +13,7 @@
 //! coverage).
 #![allow(dead_code)]
 
+use ark_ar1cs_format::ConstraintMatrices;
 use ark_ar1cs_format::{ArcsFile, CurveId};
 use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ar1cs_zkey::ArzkeyFile;
@@ -21,7 +22,6 @@ use ark_bn254::{Bn254, Fr as BnFr};
 use ark_ec::pairing::Pairing;
 use ark_ff::PrimeField;
 use ark_groth16::{Groth16, ProvingKey};
-use ark_ar1cs_format::ConstraintMatrices;
 use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystem, ConstraintSystemRef, LinearCombination,
     OptimizationGoal, SynthesisError, SynthesisMode,
@@ -92,8 +92,7 @@ fn setup_with_witness_curve<E: Pairing>(
     let ar1cs_blake3 = arcs.body_blake3();
     let arzkey = ArzkeyFile::<E>::from_setup_output(arcs, pk);
 
-    let arwtns =
-        ArwtnsFile::<E::ScalarField>::from_assignments(curve_id, ar1cs_blake3, &[y], &[x]);
+    let arwtns = ArwtnsFile::<E::ScalarField>::from_assignments(curve_id, ar1cs_blake3, &[y], &[x]);
 
     (arzkey, arwtns)
 }
@@ -109,8 +108,6 @@ pub fn setup_with_witness(x_value: u64) -> (ArzkeyFile<Bn254>, ArwtnsFile<BnFr>)
 /// BLS12-381 mirror of [`setup_with_witness`]. Used by the Phase D Q3 #2
 /// cross-curve e2e test to verify the prover, envelopes, and bind rules
 /// stay correct under a second pairing curve.
-pub fn setup_with_witness_bls(
-    x_value: u64,
-) -> (ArzkeyFile<Bls12_381>, ArwtnsFile<BlsFr>) {
+pub fn setup_with_witness_bls(x_value: u64) -> (ArzkeyFile<Bls12_381>, ArwtnsFile<BlsFr>) {
     setup_with_witness_curve::<Bls12_381>(CurveId::Bls12_381, x_value)
 }

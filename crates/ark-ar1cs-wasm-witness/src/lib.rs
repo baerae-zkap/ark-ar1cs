@@ -107,7 +107,9 @@ where
         .generate_constraints(cs.clone())
         .map_err(WitnessError::Synthesis)?;
 
-    let cs_inner = cs.borrow().ok_or(WitnessError::ConstraintSystemUnavailable)?;
+    let cs_inner = cs
+        .borrow()
+        .ok_or(WitnessError::ConstraintSystemUnavailable)?;
     if cs_inner.assignments.instance_assignment.is_empty() {
         return Err(WitnessError::MissingOneWire);
     }
@@ -135,12 +137,8 @@ mod tests {
         let y = Fr::from(11u64);
         let z = x * y;
         let blake3 = [0x42u8; 32];
-        let arwtns = circuit_to_arwtns(
-            MockCircuit { x, y, z },
-            CurveId::Bn254,
-            blake3,
-        )
-        .expect("circuit_to_arwtns failed");
+        let arwtns = circuit_to_arwtns(MockCircuit { x, y, z }, CurveId::Bn254, blake3)
+            .expect("circuit_to_arwtns failed");
 
         assert_eq!(arwtns.header.curve_id as u8, CurveId::Bn254 as u8);
         assert_eq!(arwtns.header.ar1cs_blake3, blake3);
@@ -166,24 +164,23 @@ mod tests {
         let blake3 = [0x55u8; 32];
 
         // Path under test: circuit_to_arwtns with construct_matrices=false (current code).
-        let arwtns_witness_only = circuit_to_arwtns(
-            MockCircuit { x, y, z },
-            CurveId::Bn254,
-            blake3,
-        )
-        .unwrap();
+        let arwtns_witness_only =
+            circuit_to_arwtns(MockCircuit { x, y, z }, CurveId::Bn254, blake3).unwrap();
 
         // Reference path: open-coded with default construct_matrices=true.
         let cs = ConstraintSystem::<Fr>::new_ref();
-        cs.set_mode(SynthesisMode::Prove { construct_matrices: true, generate_lc_assignments: false });
-        MockCircuit { x, y, z }.generate_constraints(cs.clone()).unwrap();
+        cs.set_mode(SynthesisMode::Prove {
+            construct_matrices: true,
+            generate_lc_assignments: false,
+        });
+        MockCircuit { x, y, z }
+            .generate_constraints(cs.clone())
+            .unwrap();
         let cs_inner = cs.borrow().unwrap();
         let instance: alloc::vec::Vec<Fr> = cs_inner.assignments.instance_assignment[1..].to_vec();
         let witness: alloc::vec::Vec<Fr> = cs_inner.assignments.witness_assignment.clone();
         drop(cs_inner);
-        let arwtns_full = ArwtnsFile::from_assignments(
-            CurveId::Bn254, blake3, &instance, &witness,
-        );
+        let arwtns_full = ArwtnsFile::from_assignments(CurveId::Bn254, blake3, &instance, &witness);
 
         assert_eq!(arwtns_witness_only, arwtns_full);
 
@@ -201,12 +198,7 @@ mod tests {
         let y = Fr::from(5u64);
         let z = x * y;
         let blake3 = [0x99u8; 32];
-        let arwtns = circuit_to_arwtns(
-            MockCircuit { x, y, z },
-            CurveId::Bn254,
-            blake3,
-        )
-        .unwrap();
+        let arwtns = circuit_to_arwtns(MockCircuit { x, y, z }, CurveId::Bn254, blake3).unwrap();
 
         let mut buf = alloc::vec::Vec::new();
         arwtns.write(&mut buf).unwrap();

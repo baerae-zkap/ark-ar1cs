@@ -45,7 +45,11 @@ fn curve_id_mismatch_returns_curve_id_variant() {
     // Also pin down the structured payload so a regression that drops the
     // arzkey/arwtns identifiers from the variant is caught.
     if let ProverError::ArtifactMismatch {
-        reason: ArtifactMismatchReason::CurveId { arzkey: a, arwtns: w },
+        reason:
+            ArtifactMismatchReason::CurveId {
+                arzkey: a,
+                arwtns: w,
+            },
     } = err
     {
         assert_eq!(a, CurveId::Bn254 as u8);
