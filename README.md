@@ -21,21 +21,28 @@ the circuit code. ark-ar1cs cuts the coupling: every step after
 
 ## Project surface
 
-The project surface is exactly **four core crates** producing **three
-artifact formats**, plus a runnable examples crate.
+The project surface is **three crates** producing **two artifact
+formats**, split along the runtime / build-time axis.
 
-| Crate | Artifact | Role |
-|-------|----------|------|
-| [`ark-ar1cs-format`](crates/ark-ar1cs-format) | `.ar1cs` | Frozen R1CS matrices + `exporter`/`importer` modules |
-| [`ark-ar1cs-zkey`](crates/ark-ar1cs-zkey)     | `.arzkey` | Setup output (matrices + VK + PK) |
-| [`ark-ar1cs-wtns`](crates/ark-ar1cs-wtns)     | `.arwtns` | One witness assignment |
-| [`ark-ar1cs-prover`](crates/ark-ar1cs-prover) | `Proof<E>` | `prove(.arzkey, .arwtns) → Proof` |
-| [`ark-ar1cs-examples`](crates/ark-ar1cs-examples) | – | Runnable end-to-end workflows |
+```text
+crates/
+├── ark-ar1cs/                  ← R (runtime) — codec read paths + prove/verify
+├── ark-ar1cs-build/            ← B (build-time) — Circuit → .ar1cs + .arzkey
+└── ark-ar1cs-wasm-witness/     ← Circuit → circuit.wasm witness generator
+```
 
-The `format` crate exposes two workflow adapter modules — `format::exporter`
-(synthesize → `.ar1cs`) and `format::importer` (`.ar1cs` → arkworks
-`ConstraintSynthesizer`) — and an opt-in `test_fixtures` module gated
-behind the `test-fixtures` feature for shared property-test fixtures.
+| Crate | Role | Artifacts |
+|-------|------|-----------|
+| [`ark-ar1cs`](crates/ark-ar1cs)                           | **R** — runtime codecs + `prove`/`verify`. `format::importer`, `arzkey::ArzkeyFile::read`, prove path. Wasm-clean. | reads `.ar1cs`, `.arzkey` |
+| [`ark-ar1cs-build`](crates/ark-ar1cs-build)               | **B** — build-time toolchain. `export_circuit` (Circuit → `.ar1cs`) and `from_setup_output` (matrices + PK → `.arzkey`). Native-only. | writes `.ar1cs`, `.arzkey` |
+| [`ark-ar1cs-wasm-witness`](crates/ark-ar1cs-wasm-witness) | Macro-driven `circuit.wasm` witness generator. | writes raw `Vec<F>` witness via `ark-serialize` |
+
+Runnable end-to-end workflows live in
+[`crates/ark-ar1cs/examples/`](crates/ark-ar1cs/examples) and combine
+`ark-ar1cs` + `ark-ar1cs-build` to demonstrate
+`Circuit → .ar1cs → setup → .arzkey → prove → verify`. The opt-in
+`test_fixtures` module on `ark-ar1cs` (gated behind the `test-fixtures`
+feature) provides shared property-test fixtures.
 
 ## Core principles
 
@@ -54,18 +61,17 @@ behind the `test-fixtures` feature for shared property-test fixtures.
    component boundaries. The methodology is scheme-agnostic and survives
    any future move beyond Groth16.
 
-3. **Scope Rule.** Four crates, three formats. Anything else is a
-   workflow adapter or a test fixture.
+3. **Scope Rule.** Three crates, two artifact formats, split R/B
+   (runtime / build-time). Anything else is a workflow adapter or a
+   test fixture.
 
 ## Quick example
 
 ```rust
-use ark_ar1cs_format::exporter::export_circuit;
-use ark_ar1cs_format::importer::ImportedCircuit;
-use ark_ar1cs_format::{ArcsFile, CurveId};
-use ark_ar1cs_prover::{prove, verify};
-use ark_ar1cs_wtns::ArwtnsFile;
-use ark_ar1cs_zkey::ArzkeyFile;
+use ark_ar1cs::format::importer::ImportedCircuit;
+use ark_ar1cs::format::{ArcsFile, CurveId};
+use ark_ar1cs::{prove, verify};
+use ark_ar1cs_build::{export_circuit, from_setup_output};
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::Groth16;
 
@@ -87,25 +93,20 @@ let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(
 
 // 3. Wrap (matrices, pk) as a single .arzkey. vk = pk.vk.clone() internally.
 let arcs = ArcsFile::<Fr>::read(&mut &arcs_bytes[..])?;
-let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
+let arzkey = from_setup_output::<Bn254>(arcs, pk);
 
-// 4. Compute the witness for a concrete instance.
-//    `instance` excludes the implicit "1" wire — the prover prepends it.
-let (instance, witness) = compute_assignment_for(&build_circuit());
-let arwtns = ArwtnsFile::<Fr>::from_assignments(
-    CurveId::Bn254,
-    arzkey.header.ar1cs_blake3,
-    &instance,
-    &witness,
-);
+// 4. Compute the full assignment for a concrete instance.
+//    Layout: [F::ONE, instance_vars..., witness_vars...].
+let full_assignment = compute_full_assignment_for(&build_circuit());
 
 // 5. Prove and verify — no circuit object at prove time.
-let proof = prove(&arzkey, &arwtns, &mut rng)?;
-assert!(verify(&arzkey, &instance, &proof)?);
+let proof = prove(&arzkey, &full_assignment, &mut rng)?;
+let instance = &full_assignment[1..arzkey.header.num_instance_variables as usize];
+assert!(verify(&arzkey, instance, &proof)?);
 ```
 
 A runnable end-to-end version of this walkthrough lives in
-[`crates/ark-ar1cs-examples/examples/01_export_setup_prove_verify.rs`](crates/ark-ar1cs-examples/examples/01_export_setup_prove_verify.rs).
+[`crates/ark-ar1cs/examples/01_export_setup_prove_verify.rs`](crates/ark-ar1cs/examples/01_export_setup_prove_verify.rs).
 
 ## Format envelope (shared by all three)
 
@@ -130,11 +131,12 @@ A runnable end-to-end version of this walkthrough lives in
 | Format | Header size | Body | Max size |
 |--------|------------:|------|---------:|
 | `.ar1cs`  | 57 bytes  | matrix A \| B \| C (canonical sort)  | 256 MiB |
-| `.arzkey` | 128 bytes | embedded `.ar1cs` \| vk \| pk        | 1 GiB   |
-| `.arwtns` | 64 bytes  | instance assignments \| witness assignments | 256 MiB |
+| `.arzkey` | 128 bytes | embedded `.ar1cs` \| vk \| pk        | 8 GiB   |
 
-See each crate's README for the exact byte layout, the error model, and
-the partial-read patterns.
+See each crate's source for the exact byte layout, the error model, and
+the partial-read patterns. The witness now travels as a raw
+`Vec<E::ScalarField>` via `ark-serialize` (no envelope) between the
+`circuit.wasm` generator and the Rust prover.
 
 ## Curve support
 
@@ -151,26 +153,25 @@ with `CurveIdMismatch`, prover's bind-check rejects with
 
 ## Wasm support
 
-`ark-ar1cs-format`, `ark-ar1cs-wtns`, and `ark-ar1cs-prover` build clean on
-`wasm32-unknown-unknown` (CI-enforced). The prover uses `getrandom`
-features `["js"]` for browser builds. See
-[`crates/ark-ar1cs-prover/README.md`](crates/ark-ar1cs-prover/README.md) for
-the exact build command and randomness-source notes.
+`ark-ar1cs` and `ark-ar1cs-wasm-witness` build clean on
+`wasm32-unknown-unknown` (CI-enforced). `ark-ar1cs-build` is
+**native-only** by design — it pulls in the arkworks setup machinery
+and is meant to run on the CI host that produces deployable
+`.ar1cs`/`.arzkey` artifacts, not in the browser.
 
-The intended deployment shape is: a wasm witness generator (built and
-distributed separately, e.g. via S3) computes the assignment and writes
-`.arwtns` bytes via `ArwtnsFile::write` — it does **not** re-implement
-the envelope. A Rust prover (native or wasm) consumes those bytes
-together with `.arzkey`.
+The intended deployment shape: a `circuit.wasm` witness generator
+(produced by `ark-ar1cs-wasm-witness`) computes the full assignment and
+serializes it as `Vec<E::ScalarField>` via `ark-serialize`. A Rust
+prover (native or wasm) consumes those bytes together with `.arzkey`.
 
 ## Build and test
 
 ```bash
 cargo build --workspace
 cargo test --workspace
-cargo clippy --workspace --all-targets -- -D warnings
+cargo clippy --all -- -D warnings
 cargo build --target wasm32-unknown-unknown \
-    -p ark-ar1cs-format -p ark-ar1cs-wtns -p ark-ar1cs-prover
+    -p ark-ar1cs -p ark-ar1cs-wasm-witness
 ```
 
 Property tests run at ≥1000 iterations under `cargo test --release`.
