@@ -7,7 +7,7 @@
 //!
 //! The PK is read with `deserialize_uncompressed_unchecked` to match
 //! zkap-circuit's `crs::persist_setup_output` writer (uncompressed binary).
-//! `ArzkeyFile::from_setup_output` derives the VK internally from `pk.vk`,
+//! `ark_ar1cs_build::from_setup_output` derives the VK internally from `pk.vk`,
 //! so PK/VK drift inside the resulting `.arzkey` is structurally impossible.
 
 use std::error::Error;
@@ -15,7 +15,6 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 
-use ark_ar1cs::arzkey::ArzkeyFile;
 use ark_ar1cs::format::ArcsFile;
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::ProvingKey;
@@ -68,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     println!("Building ArzkeyFile (vk derived from pk.vk) ...");
-    let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
+    let arzkey = ark_ar1cs_build::from_setup_output::<Bn254>(arcs, pk);
     arzkey.validate()?;
 
     if let Some(parent) = out_path.parent() {

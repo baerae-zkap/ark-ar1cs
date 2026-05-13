@@ -56,7 +56,7 @@ fn round_trip_bn254() {
         .expect("Groth16 setup failed");
 
     let arcs = extract_arcs();
-    let original = ArzkeyFile::<Bn254>::from_setup_output(arcs.clone(), pk.clone());
+    let original = ark_ar1cs_build::from_setup_output::<Bn254>(arcs.clone(), pk.clone());
 
     let mut buf = Vec::new();
     original.write(&mut buf).expect("write failed");
@@ -76,7 +76,7 @@ fn from_setup_output_derives_vk_from_pk() {
         .unwrap();
 
     let arcs = extract_arcs();
-    let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk.clone());
+    let arzkey = ark_ar1cs_build::from_setup_output::<Bn254>(arcs, pk.clone());
 
     // ARCH-3 — arzkey.vk MUST equal pk.vk by construction. Drift class
     // structurally closed.
@@ -90,7 +90,7 @@ fn validate_passes_after_construction() {
     let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
         .unwrap();
     let arcs = extract_arcs();
-    let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
+    let arzkey = ark_ar1cs_build::from_setup_output::<Bn254>(arcs, pk);
     arzkey.validate().expect("validate should pass");
 }
 
@@ -102,7 +102,7 @@ fn vk_extraction_via_serialize_compressed() {
     let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
         .unwrap();
     let arcs = extract_arcs();
-    let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
+    let arzkey = ark_ar1cs_build::from_setup_output::<Bn254>(arcs, pk);
 
     // CQ-1 — no write_vk_only helper. Raw VK bytes come from one line.
     // V1 envelope writes vk uncompressed, so the comparison against

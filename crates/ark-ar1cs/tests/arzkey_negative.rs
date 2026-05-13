@@ -72,7 +72,7 @@ fn make_valid_file_bytes() -> Vec<u8> {
     let mut rng = ark_std::test_rng();
     let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
         .unwrap();
-    let arzkey = ArzkeyFile::<Bn254>::from_setup_output(extract_arcs(), pk);
+    let arzkey = ark_ar1cs_build::from_setup_output::<Bn254>(extract_arcs(), pk);
     let mut buf = Vec::new();
     arzkey.write(&mut buf).unwrap();
     buf
@@ -241,7 +241,7 @@ fn rejects_vk_duplication_drift() {
     let pk1 =
         Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng1)
             .unwrap();
-    let arzkey1 = ArzkeyFile::<Bn254>::from_setup_output(extract_arcs(), pk1);
+    let arzkey1 = ark_ar1cs_build::from_setup_output::<Bn254>(extract_arcs(), pk1);
     let mut buf = Vec::new();
     arzkey1.write(&mut buf).unwrap();
 
@@ -360,7 +360,7 @@ fn validate_rejects_count_mismatch() {
     let mut rng = ark_std::test_rng();
     let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(setup_circuit(), &mut rng)
         .unwrap();
-    let mut arzkey = ArzkeyFile::<Bn254>::from_setup_output(extract_arcs(), pk);
+    let mut arzkey = ark_ar1cs_build::from_setup_output::<Bn254>(extract_arcs(), pk);
     arzkey.header.num_constraints = 999;
 
     let err = arzkey.validate().expect_err("expected CountMismatch");

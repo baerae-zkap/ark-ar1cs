@@ -5,7 +5,7 @@ use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystem, OptimizationGoal, SynthesisError, SynthesisMode,
 };
 
-use crate::format::{compat::ConstraintMatrices, ArcsError, ArcsFile, CurveId};
+use ark_ar1cs::format::{compat::ConstraintMatrices, ArcsError, ArcsFile, CurveId};
 
 #[derive(Debug)]
 pub enum ExportError {

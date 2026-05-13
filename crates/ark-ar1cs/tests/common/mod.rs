@@ -90,7 +90,7 @@ fn setup_with_witness_curve<E: Pairing>(
         y: E::ScalarField::from(0u64),
     });
     let arcs = ArcsFile::from_matrices(curve_id, &matrices);
-    let arzkey = ArzkeyFile::<E>::from_setup_output(arcs, pk);
+    let arzkey = ark_ar1cs_build::from_setup_output::<E>(arcs, pk);
 
     // SquareCircuit wire layout: [ONE, y (instance), x (witness)].
     let full_assignment = vec![E::ScalarField::ONE, y, x];

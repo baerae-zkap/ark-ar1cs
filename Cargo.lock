@@ -76,6 +76,7 @@ name = "ark-ar1cs"
 version = "0.1.0"
 dependencies = [
  "ark-ar1cs",
+ "ark-ar1cs-build",
  "ark-bls12-381",
  "ark-bn254",
  "ark-ec",
@@ -92,10 +93,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-ar1cs-build"
+version = "0.1.0"
+dependencies = [
+ "ark-ar1cs",
+ "ark-bn254",
+ "ark-ec",
+ "ark-ff",
+ "ark-groth16",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "blake3",
+ "rand 0.8.5",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
 name = "ark-ar1cs-examples"
 version = "0.1.0"
 dependencies = [
  "ark-ar1cs",
+ "ark-ar1cs-build",
  "ark-bls12-381",
  "ark-bn254",
  "ark-ec",

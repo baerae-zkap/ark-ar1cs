@@ -10,14 +10,14 @@
 //! artifacts handed off across component boundaries):
 //!
 //! 1. **Export** — synthesize a `ConstraintSynthesizer` and write
-//!    `.ar1cs` bytes via `ark_ar1cs::format::exporter::export_circuit`.
+//!    `.ar1cs` bytes via `ark_ar1cs_build::export_circuit`.
 //! 2. **Setup** — re-import the bytes as an `ImportedCircuit`
 //!    (no original Rust circuit needed) and run
 //!    `Groth16::generate_random_parameters_with_reduction` to produce
 //!    a `ProvingKey<Bn254>`.
 //! 3. **Wrap setup output** — bundle the matrices and the proving key
 //!    as a single `.arzkey` via
-//!    `ArzkeyFile::from_setup_output(arcs, pk)`. The verifying key is
+//!    `ark_ar1cs_build::from_setup_output(arcs, pk)`. The verifying key is
 //!    derived internally from `pk.vk.clone()` so PK/VK drift is
 //!    structurally impossible.
 //! 4. **Build full assignment** — compute the witness `(x, y = x*x)`
@@ -49,11 +49,10 @@
 
 use std::error::Error;
 
-use ark_ar1cs::arzkey::ArzkeyFile;
-use ark_ar1cs::format::exporter::export_circuit;
 use ark_ar1cs::format::importer::ImportedCircuit;
 use ark_ar1cs::format::{ArcsFile, CurveId};
 use ark_ar1cs::{prove, verify};
+use ark_ar1cs_build::{export_circuit, from_setup_output};
 use ark_bn254::{Bn254, Fr};
 use ark_ff::Field;
 use ark_groth16::Groth16;
@@ -112,7 +111,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     //    the atomic ceremony output; the embedded VK is derived from
     //    pk.vk.clone() so PK/VK drift is structurally impossible.
     let arcs = ArcsFile::<Fr>::read(&mut &arcs_bytes[..])?;
-    let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
+    let arzkey = from_setup_output::<Bn254>(arcs, pk);
     println!(
         "[3/5] arzkey wrapped  → ar1cs_byte_len={}, vk_byte_len={}, pk_byte_len={}",
         arzkey.header.ar1cs_byte_len, arzkey.header.vk_byte_len, arzkey.header.pk_byte_len,

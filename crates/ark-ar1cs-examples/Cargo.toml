@@ -9,6 +9,7 @@ publish = false
 
 [dependencies]
 ark-ar1cs        = { path = "../ark-ar1cs" }
+ark-ar1cs-build  = { path = "../ark-ar1cs-build" }
 ark-bls12-381    = { workspace = true }
 ark-bn254        = { workspace = true }
 ark-ec           = { workspace = true }
