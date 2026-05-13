@@ -20,7 +20,7 @@
 //! identity, the comparison is one line before `prove`:
 //!
 //! ```ignore
-//! use ark_ar1cs_prover::{ArtifactMismatchReason, ProverError};
+//! use ark_ar1cs::{ArtifactMismatchReason, ProverError};
 //!
 //! if arzkey.header.ar1cs_blake3 != expected_ar1cs_blake3 {
 //!     return Err(ProverError::ArtifactMismatch {
@@ -36,9 +36,9 @@
 
 use std::error::Error;
 
-use ark_ar1cs_format::{ArcsFile, CurveId};
-use ark_ar1cs_prover::{prove, verify};
-use ark_ar1cs_zkey::ArzkeyFile;
+use ark_ar1cs::arzkey::ArzkeyFile;
+use ark_ar1cs::format::{ArcsFile, CurveId};
+use ark_ar1cs::{prove, verify};
 use ark_bls12_381::Bls12_381;
 use ark_bn254::Bn254;
 use ark_ec::pairing::Pairing;
@@ -71,13 +71,13 @@ impl<F: PrimeField> ConstraintSynthesizer<F> for SquareCircuit<F> {
 
 fn collect_matrices<F: PrimeField, C: ConstraintSynthesizer<F>>(
     circuit: C,
-) -> Result<ark_ar1cs_format::ConstraintMatrices<F>, Box<dyn Error>> {
+) -> Result<ark_ar1cs::format::ConstraintMatrices<F>, Box<dyn Error>> {
     let cs = ConstraintSystem::<F>::new_ref();
     cs.set_optimization_goal(OptimizationGoal::Constraints);
     cs.set_mode(SynthesisMode::Setup);
     circuit.generate_constraints(cs.clone())?;
     cs.finalize();
-    ark_ar1cs_format::ConstraintMatrices::from_cs(&cs)
+    ark_ar1cs::format::ConstraintMatrices::from_cs(&cs)
         .map_err(|e| format!("ConstraintMatrices::from_cs failed: {e:?}").into())
 }
 

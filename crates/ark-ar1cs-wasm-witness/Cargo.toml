@@ -17,7 +17,7 @@ keywords = ["zk-snark", "groth16", "arkworks", "r1cs", "wasm"]
 test-mock = ["dep:ark-bn254"]
 
 [dependencies]
-ark-ar1cs-format = { path = "../ark-ar1cs-format" }
+ark-ar1cs        = { path = "../ark-ar1cs" }
 ark-ff           = { workspace = true }
 ark-relations    = { workspace = true }
 ark-serialize    = { workspace = true }

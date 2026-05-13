@@ -72,28 +72,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
-name = "ark-ar1cs-examples"
+name = "ark-ar1cs"
 version = "0.1.0"
 dependencies = [
- "ark-ar1cs-format",
- "ark-ar1cs-prover",
- "ark-ar1cs-zkey",
- "ark-bls12-381",
- "ark-bn254",
- "ark-ec",
- "ark-ff",
- "ark-groth16",
- "ark-relations",
- "ark-serialize",
- "ark-std",
- "rand 0.8.5",
-]
-
-[[package]]
-name = "ark-ar1cs-format"
-version = "0.1.0"
-dependencies = [
- "ark-ar1cs-format",
+ "ark-ar1cs",
  "ark-bls12-381",
  "ark-bn254",
  "ark-ec",
@@ -105,14 +87,15 @@ dependencies = [
  "blake3",
  "proptest",
  "rand 0.8.5",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]
-name = "ark-ar1cs-prover"
+name = "ark-ar1cs-examples"
 version = "0.1.0"
 dependencies = [
- "ark-ar1cs-format",
- "ark-ar1cs-zkey",
+ "ark-ar1cs",
  "ark-bls12-381",
  "ark-bn254",
  "ark-ec",
@@ -121,16 +104,14 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "proptest",
  "rand 0.8.5",
- "thiserror",
 ]
 
 [[package]]
 name = "ark-ar1cs-wasm-witness"
 version = "0.1.0"
 dependencies = [
- "ark-ar1cs-format",
+ "ark-ar1cs",
  "ark-bn254",
  "ark-ff",
  "ark-relations",
@@ -139,37 +120,6 @@ dependencies = [
  "dhat",
  "postcard",
  "serde",
- "thiserror",
-]
-
-[[package]]
-name = "ark-ar1cs-wtns"
-version = "0.1.0"
-dependencies = [
- "ark-ar1cs-format",
- "ark-bn254",
- "ark-ff",
- "ark-serialize",
- "blake3",
- "proptest",
- "thiserror",
-]
-
-[[package]]
-name = "ark-ar1cs-zkey"
-version = "0.1.0"
-dependencies = [
- "ark-ar1cs-format",
- "ark-bn254",
- "ark-ec",
- "ark-ff",
- "ark-groth16",
- "ark-relations",
- "ark-serialize",
- "ark-std",
- "blake3",
- "rand 0.8.5",
- "tempfile",
  "thiserror",
 ]
 
@@ -1113,7 +1063,7 @@ dependencies = [
 name = "large-witness-fixture"
 version = "0.0.0"
 dependencies = [
- "ark-ar1cs-format",
+ "ark-ar1cs",
  "ark-ar1cs-wasm-witness",
  "ark-bn254",
  "ark-ff",

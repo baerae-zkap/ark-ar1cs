@@ -22,7 +22,7 @@ use ark_relations::gr1cs::{
 };
 use serde::{Deserialize, Serialize};
 
-use ark_ar1cs_format::CurveId;
+use ark_ar1cs::format::CurveId;
 
 use crate::abi::WitnessAbiCode;
 use crate::WitnessGenerator;

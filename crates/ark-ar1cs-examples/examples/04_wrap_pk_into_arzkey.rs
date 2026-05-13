@@ -15,8 +15,8 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 
-use ark_ar1cs_format::ArcsFile;
-use ark_ar1cs_zkey::ArzkeyFile;
+use ark_ar1cs::arzkey::ArzkeyFile;
+use ark_ar1cs::format::ArcsFile;
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::ProvingKey;
 use ark_serialize::CanonicalDeserialize;
