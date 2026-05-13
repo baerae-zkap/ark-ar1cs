@@ -1,41 +1,15 @@
-//! Top-level errors emitted by the generic witness layer.
+//! Re-export of the core [`ark_ar1cs::WitnessError`] for callers that still
+//! reach for `ark_ar1cs_wasm_witness::error::WitnessError`.
+//!
+//! The enum and its impls live in the runtime crate (`ark-ar1cs`) so the
+//! `.ar1cs` codec / prove primitive owns the witness error type. This module
+//! exists only as a transitional alias — the upcoming Commit 7 of the
+//! feature-boundary migration deletes this crate entirely; callers should
+//! migrate their imports to `ark_ar1cs::WitnessError`.
+//!
+//! No `impl From<WitnessError> for WitnessAbiCode` lives here: the wasm ABI
+//! conversion is inlined at the two `macros` call sites (orphan-rule
+//! workaround per `docs/feature-boundary-locked.md` §"Implementation Notes"
+//! §1 option (c)).
 
-use ark_relations::gr1cs::SynthesisError;
-
-use crate::abi::WitnessAbiCode;
-
-/// Errors raised by [`crate::synthesize_full_assignment`].
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum WitnessError {
-    /// `ConstraintSynthesizer::generate_constraints` failed.
-    #[error("constraint synthesis failed: {0}")]
-    Synthesis(SynthesisError),
-
-    /// `ConstraintSystemRef::borrow` returned `None` (the cs was dropped or
-    /// already mutably borrowed). Should not occur for the
-    /// fresh-cs-per-call pattern this crate uses.
-    #[error("constraint system borrow unavailable")]
-    ConstraintSystemUnavailable,
-
-    /// `instance_assignment` was empty — no implicit `1` wire present.
-    /// Indicates the circuit synthesizer did not run, since the cs always
-    /// pre-seeds index 0 with `F::ONE`.
-    #[error("constraint system missing implicit 1-wire at index 0")]
-    MissingOneWire,
-
-    /// Witness assignment `Vec<F>` serialization failed downstream.
-    #[error("witness serialize: {0}")]
-    Serialize(#[from] ark_serialize::SerializationError),
-}
-
-impl From<WitnessError> for WitnessAbiCode {
-    fn from(err: WitnessError) -> Self {
-        match err {
-            WitnessError::Synthesis(_) => WitnessAbiCode::CircuitBuildError,
-            WitnessError::ConstraintSystemUnavailable => WitnessAbiCode::CircuitBuildError,
-            WitnessError::MissingOneWire => WitnessAbiCode::CircuitBuildError,
-            WitnessError::Serialize(_) => WitnessAbiCode::CircuitBuildError,
-        }
-    }
-}
+pub use ark_ar1cs::WitnessError;

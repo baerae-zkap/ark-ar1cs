@@ -35,6 +35,7 @@
 
 pub mod arzkey;
 pub mod format;
+pub mod witness;
 
 mod preflight;
 mod prove;
@@ -44,3 +45,4 @@ mod verifier;
 pub use prove::prove;
 pub use prove_error::{ArtifactMismatchReason, ProverError};
 pub use verifier::verify;
+pub use witness::{synthesize_full_assignment, WitnessError};

@@ -26,10 +26,30 @@
 use alloc::vec::Vec;
 
 use ark_ar1cs::format::CurveId;
+use ark_ar1cs::WitnessError;
 use ark_serialize::CanonicalSerialize;
 
 use crate::abi::WitnessAbiCode;
 use crate::WitnessGenerator;
+
+/// Inline `WitnessError → WitnessAbiCode` converter.
+///
+/// `WitnessError` lives in `ark-ar1cs` core and `WitnessAbiCode` lives in
+/// this crate's `abi` module, so an `impl From<WitnessError> for
+/// WitnessAbiCode` would violate Rust's orphan rule. Every variant maps
+/// to `CircuitBuildError`; the explicit listing plus the
+/// `#[non_exhaustive]` catch-all is the transitional shape until Commit 7
+/// deletes this crate.
+#[inline]
+fn witness_error_to_abi(e: WitnessError) -> WitnessAbiCode {
+    match e {
+        WitnessError::Synthesis(_)
+        | WitnessError::ConstraintSystemUnavailable
+        | WitnessError::MissingOneWire
+        | WitnessError::Serialize(_) => WitnessAbiCode::CircuitBuildError,
+        _ => WitnessAbiCode::CircuitBuildError,
+    }
+}
 
 /// Native (non-wasm) entry point with the same contract as the wasm
 /// `witness_generator` export.
@@ -55,7 +75,7 @@ pub fn witness_generator_native<G: WitnessGenerator>(
         postcard::from_bytes(input).map_err(|_| WitnessAbiCode::PostcardDecodeError)?;
     let circuit = G::build_circuit(decoded).map_err(|e| e.into())?;
     let full_assignment = crate::synthesize_full_assignment::<G::Circuit, G::Field>(circuit)
-        .map_err(WitnessAbiCode::from)?;
+        .map_err(witness_error_to_abi)?;
     let mut buf: Vec<u8> = Vec::new();
     full_assignment
         .serialize_compressed(&mut buf)
@@ -197,7 +217,7 @@ pub unsafe fn __witness_generator_export<G: WitnessGenerator>(
     };
     let full_assignment = match crate::synthesize_full_assignment::<G::Circuit, G::Field>(circuit) {
         Ok(a) => a,
-        Err(e) => return WitnessAbiCode::from(e),
+        Err(e) => return witness_error_to_abi(e),
     };
     // SAFETY: out-pointer contract delegated to caller.
     unsafe { crate::abi::return_full_assignment(&full_assignment, out_ptr_out, out_len_out) }
