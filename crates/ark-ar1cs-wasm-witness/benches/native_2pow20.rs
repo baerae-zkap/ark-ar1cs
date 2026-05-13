@@ -14,15 +14,11 @@ use std::time::Duration;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use ark_ar1cs_format::CurveId;
-use ark_ar1cs_wasm_witness::{
-    circuit_to_arwtns,
-    mock::{LargeMockCircuit, EMBEDDED_LARGE_AR1CS_BLAKE3},
-};
+use ark_ar1cs_wasm_witness::{mock::LargeMockCircuit, synthesize_full_assignment};
 use ark_bn254::Fr;
 
-fn bench_native_circuit_to_arwtns_2pow20(c: &mut Criterion) {
-    let mut group = c.benchmark_group("native_circuit_to_arwtns_2pow20");
+fn bench_native_synthesize_full_assignment_2pow20(c: &mut Criterion) {
+    let mut group = c.benchmark_group("native_synthesize_full_assignment_2pow20");
     // 2^20 squarings is heavy; cap the sample set so total wall time is
     // bounded. p99 is noisier with 10 samples — that's the trade.
     group.sample_size(10);
@@ -35,14 +31,14 @@ fn bench_native_circuit_to_arwtns_2pow20(c: &mut Criterion) {
                 seed: black_box(Fr::from(3u64)),
                 depth: black_box(20),
             };
-            let arwtns = circuit_to_arwtns(circuit, CurveId::Bn254, EMBEDDED_LARGE_AR1CS_BLAKE3)
-                .expect("native circuit_to_arwtns failed");
-            black_box(arwtns);
+            let full = synthesize_full_assignment::<_, Fr>(circuit)
+                .expect("native synthesize_full_assignment failed");
+            black_box(full);
         });
     });
 
     group.finish();
 }
 
-criterion_group!(benches, bench_native_circuit_to_arwtns_2pow20);
+criterion_group!(benches, bench_native_synthesize_full_assignment_2pow20);
 criterion_main!(benches);

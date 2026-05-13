@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Generic ConstraintSynthesizer-to-.arwtns witness framework with wasm export macro"
+description = "Generic ConstraintSynthesizer-to-full-assignment witness framework with wasm export macro"
 categories = ["cryptography", "wasm"]
 keywords = ["zk-snark", "groth16", "arkworks", "r1cs", "wasm"]
 
@@ -18,9 +18,9 @@ test-mock = ["dep:ark-bn254"]
 
 [dependencies]
 ark-ar1cs-format = { path = "../ark-ar1cs-format" }
-ark-ar1cs-wtns   = { path = "../ark-ar1cs-wtns" }
 ark-ff           = { workspace = true }
 ark-relations    = { workspace = true }
+ark-serialize    = { workspace = true }
 postcard         = { workspace = true }
 serde            = { workspace = true }
 thiserror        = { workspace = true }

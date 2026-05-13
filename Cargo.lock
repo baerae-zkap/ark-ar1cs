@@ -131,10 +131,10 @@ name = "ark-ar1cs-wasm-witness"
 version = "0.1.0"
 dependencies = [
  "ark-ar1cs-format",
- "ark-ar1cs-wtns",
  "ark-bn254",
  "ark-ff",
  "ark-relations",
+ "ark-serialize",
  "criterion",
  "dhat",
  "postcard",
