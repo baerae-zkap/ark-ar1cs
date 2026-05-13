@@ -1,33 +1,53 @@
 use ark_relations::gr1cs::SynthesisError;
 use ark_serialize::SerializationError;
 
-/// The reason a `(.arzkey, .arwtns)` pair fails the bind-check stage of
-/// [`prove`](crate::prove).
+/// Why an `ArzkeyFile` is incompatible with the caller's expectations.
 ///
-/// Each variant corresponds to exactly one of the four bind rules in the
-/// prover design (`§3.3` of the plan):
-/// 1. `CurveId` — header `curve_id` differs between the two artifacts.
-/// 2. `Ar1csBlake3` — circuit-identity hashes differ between the artifacts.
-/// 3. `SelfConsistency` — the `.arzkey`'s embedded `.ar1cs` body hash does not
-///    match its own header `ar1cs_blake3`.
-/// 4. `CountMismatch` — `arwtns.num_instance + arwtns.num_witness` does not
-///    equal `arzkey.num_instance_variables - 1 + arzkey.num_witness_variables`.
+/// As of Stream 1 PR 1.0 [`prove`](crate::prove) no longer performs binding
+/// checks automatically. The variants are kept for callers that *do* their
+/// own binding (see the one-line pattern at the crate-root doc) and want a
+/// typed error to return:
 ///
-/// Marked `#[non_exhaustive]` (CQ-2) so future rules can be added without a
-/// breaking change. Variants are structured (CQ-4) — never `String` payloads —
-/// so callers can match exactly on the failure mode.
+/// ```rust,ignore
+/// if arzkey.header.ar1cs_blake3 != expected_ar1cs_blake3 {
+///     return Err(ProverError::ArtifactMismatch {
+///         reason: ArtifactMismatchReason::Ar1csBlake3,
+///     });
+/// }
+/// ```
+///
+/// The four historical rules and their current guarantee paths:
+/// 1. `CurveId` — caught by `ArzkeyFile::<E>::read` at parse time (type-level
+///    `E` vs `header.curve_id` mismatch); kept here for callers comparing two
+///    pre-parsed headers from different sources.
+/// 2. `Ar1csBlake3` — caller compares against a known-good blake3 (deployment
+///    manifest, etc.).
+/// 3. `SelfConsistency` — `ArcsFile::read` validates the embedded body hash
+///    against the header at read time; kept here for forward compatibility.
+/// 4. `CountMismatch` — [`prove`](crate::prove) auto-emits
+///    [`ProverError::WitnessLengthMismatch`] when `full_assignment.len()` is
+///    inconsistent with `arzkey.header`; kept here for callers that compare
+///    two manifests pre-prove.
+///
+/// `#[non_exhaustive]` so future variants are non-breaking. Variants stay
+/// structured (no `String` payloads) so callers can match exactly.
 #[non_exhaustive]
 #[derive(Debug, PartialEq, Eq)]
 pub enum ArtifactMismatchReason {
-    /// Rule 1 — header `curve_id` differs between artifacts.
+    /// Header `curve_id` differs between two artifacts (e.g. an arzkey and a
+    /// manifest entry). `ArzkeyFile::<E>::read` already rejects wrong-curve
+    /// arzkeys at parse time, so this is for caller-side cross-checks.
     CurveId { arzkey: u8, arwtns: u8 },
-    /// Rule 2 — `ar1cs_blake3` differs between artifacts (different circuit).
+    /// `ar1cs_blake3` differs from the caller's expected value (different
+    /// circuit). The recommended caller binding check emits this.
     Ar1csBlake3,
-    /// Rule 3 — `arzkey.arcs().body_blake3()` differs from
-    /// `arzkey.header.ar1cs_blake3` (the `.arzkey` is internally inconsistent).
+    /// An `.arzkey`'s embedded `.ar1cs` body hash does not match its own header
+    /// `ar1cs_blake3`. `ArcsFile::read` validates this at read time; kept here
+    /// for callers that want to surface the failure as a `ProverError`.
     SelfConsistency,
-    /// Rule 4 — instance/witness count sum does not match the constraint
-    /// system's variable layout.
+    /// Instance/witness count sum does not match the constraint system's
+    /// variable layout. For length checks at prove time, prefer
+    /// [`ProverError::WitnessLengthMismatch`] which `prove` auto-emits.
     CountMismatch { expected: u64, got: u64 },
 }
 
@@ -39,8 +59,11 @@ pub enum ArtifactMismatchReason {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ProverError {
-    /// Cross-binding rejected the artifact pair before any cryptographic
-    /// operation. See [`ArtifactMismatchReason`] for the specific rule.
+    /// Caller-emitted: the supplied artifact is not the one this prove call
+    /// expects. [`prove`](crate::prove) never raises this itself (binding is
+    /// a caller responsibility); it is surfaced so caller binding checks
+    /// (typically a one-line `ar1cs_blake3` compare) can return a typed error
+    /// instead of inventing their own enum.
     #[error("artifact mismatch: {reason:?}")]
     ArtifactMismatch { reason: ArtifactMismatchReason },
 
