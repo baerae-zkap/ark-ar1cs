@@ -1,4 +1,4 @@
-//! `K` arwtns blobs packed into a single byte stream.
+//! `K` witness-assignment blobs packed into a single byte stream.
 //!
 //! Format (length-prefixed concatenation):
 //!
@@ -12,10 +12,11 @@
 //!     item_bytes[item_len]
 //! ```
 //!
-//! Each `item_bytes` is a complete `ArwtnsFile::write` output (header, body,
-//! and 32-byte trailer). `pack` and `unpack` are intentionally byte-only —
-//! they don't touch the field type — so the host can split a packed blob
-//! without pulling in any curve dependency.
+//! Each `item_bytes` is the raw `Vec<F>` `ark-serialize` compressed bytes of
+//! a full assignment `[F::ONE, instance..., witness...]` emitted by
+//! [`crate::synthesize_full_assignment`]. `pack` and `unpack` are
+//! intentionally byte-only — they don't touch the field type — so the host
+//! can split a packed blob without pulling in any curve dependency.
 
 use alloc::vec::Vec;
 
@@ -72,7 +73,7 @@ where
 /// Borrow each item back out of a packed blob.
 ///
 /// The returned slices reference `buf` directly — no copies. Callers can
-/// hand each slice to `ArwtnsFile::read` independently.
+/// hand each slice to `Vec::<F>::deserialize_compressed` independently.
 pub fn unpack(buf: &[u8]) -> Result<Vec<&[u8]>, PackedError> {
     if buf.len() < PACK_HEADER_LEN {
         return Err(PackedError::TooShort);

@@ -15,11 +15,12 @@
 //! Also exposes [`witness_generator_native`] — a host-callable entry point
 //! that runs the same pipeline against in-process buffers. Used by the
 //! integration tests in commit 4 and any non-wasm caller that wants the
-//! identical postcard-in / arwtns-out contract.
+//! identical postcard-in / witness-assignment-out contract.
 
 use alloc::vec::Vec;
 
 use ark_ar1cs_format::CurveId;
+use ark_serialize::CanonicalSerialize;
 
 use crate::abi::WitnessAbiCode;
 use crate::WitnessGenerator;
@@ -27,10 +28,12 @@ use crate::WitnessGenerator;
 /// Native (non-wasm) entry point with the same contract as the wasm
 /// `witness_generator` export.
 ///
-/// Returns the serialized `.arwtns` bytes on `Ok` and the matching
-/// [`WitnessAbiCode`] on every failure path. Callers that drive the wasm
-/// version via wasmer/wasmtime can use this to byte-identical-compare
-/// (commit 4 § "native circuit_to_arwtns 출력과 wasm 출력 byte-identical 검증").
+/// Returns the serialized full-assignment bytes on `Ok` (i.e. the
+/// `ark-serialize` compressed `Vec<F>` representation of
+/// `[F::ONE, instance..., witness...]`) and the matching [`WitnessAbiCode`]
+/// on every failure path. Callers that drive the wasm version via
+/// wasmer/wasmtime can use this to byte-identical-compare native vs. wasm
+/// output.
 pub fn witness_generator_native<G: WitnessGenerator>(
     input: &[u8],
     host_blake3: &[u8; 32],
@@ -45,15 +48,11 @@ pub fn witness_generator_native<G: WitnessGenerator>(
     let decoded: G::Input =
         postcard::from_bytes(input).map_err(|_| WitnessAbiCode::PostcardDecodeError)?;
     let circuit = G::build_circuit(decoded).map_err(|e| e.into())?;
-    let arwtns = crate::circuit_to_arwtns::<G::Field, G::Circuit>(
-        circuit,
-        G::CURVE_ID,
-        *embedded_ar1cs_blake3,
-    )
-    .map_err(WitnessAbiCode::from)?;
+    let full_assignment = crate::synthesize_full_assignment::<G::Circuit, G::Field>(circuit)
+        .map_err(WitnessAbiCode::from)?;
     let mut buf: Vec<u8> = Vec::new();
-    arwtns
-        .write(&mut buf)
+    full_assignment
+        .serialize_compressed(&mut buf)
         .map_err(|_| WitnessAbiCode::CircuitBuildError)?;
     Ok(buf)
 }
@@ -190,24 +189,23 @@ pub unsafe fn __witness_generator_export<G: WitnessGenerator>(
         Ok(c) => c,
         Err(e) => return e.into(),
     };
-    let arwtns =
-        match crate::circuit_to_arwtns::<G::Field, G::Circuit>(circuit, G::CURVE_ID, *embedded) {
-            Ok(a) => a,
-            Err(e) => return WitnessAbiCode::from(e),
-        };
+    let full_assignment = match crate::synthesize_full_assignment::<G::Circuit, G::Field>(circuit) {
+        Ok(a) => a,
+        Err(e) => return WitnessAbiCode::from(e),
+    };
     // SAFETY: out-pointer contract delegated to caller.
-    unsafe { crate::abi::return_arwtns(&arwtns, out_ptr_out, out_len_out) }
+    unsafe { crate::abi::return_full_assignment(&full_assignment, out_ptr_out, out_len_out) }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::abi::WitnessAbiCode;
-    use ark_ar1cs_wtns::ArwtnsFile;
     use ark_bn254::Fr;
     use ark_relations::gr1cs::{
         ConstraintSynthesizer, ConstraintSystemRef, LinearCombination, SynthesisError,
     };
+    use ark_serialize::CanonicalDeserialize;
     use serde::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize)]
@@ -266,16 +264,19 @@ mod tests {
     }
 
     #[test]
-    fn native_path_produces_round_trippable_arwtns() {
+    fn native_path_produces_round_trippable_full_assignment() {
+        use ark_ff::Field;
         let blake3 = [0xAB; 32];
         let input = ToyInput { x: 6, y: 7 };
         let bytes = postcard::to_allocvec(&input).unwrap();
         let out = witness_generator_native::<ToyGenerator>(&bytes, &blake3, &blake3).unwrap();
-        let mut cursor = std::io::Cursor::new(&out);
-        let arwtns: ArwtnsFile<Fr> = ArwtnsFile::read(&mut cursor).unwrap();
-        assert_eq!(arwtns.header.ar1cs_blake3, blake3);
-        assert_eq!(arwtns.instance, vec![Fr::from(42u64)]);
-        assert_eq!(arwtns.witness, vec![Fr::from(6u64), Fr::from(7u64)]);
+        let full: Vec<Fr> = Vec::<Fr>::deserialize_compressed(out.as_slice()).unwrap();
+        // Layout: [F::ONE, z (instance == 42), x (witness == 6), y (witness == 7)].
+        assert_eq!(full.len(), 4);
+        assert_eq!(full[0], Fr::ONE);
+        assert_eq!(full[1], Fr::from(42u64));
+        assert_eq!(full[2], Fr::from(6u64));
+        assert_eq!(full[3], Fr::from(7u64));
     }
 
     #[test]

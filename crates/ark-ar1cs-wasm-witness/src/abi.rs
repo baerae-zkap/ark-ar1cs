@@ -23,7 +23,7 @@ pub enum WitnessAbiCode {
     Blake3Mismatch = 5,
     /// `postcard::from_bytes::<Input>` failed.
     PostcardDecodeError = 6,
-    /// `build_circuit` or `circuit_to_arwtns` returned an error.
+    /// `build_circuit` or `synthesize_full_assignment` returned an error.
     CircuitBuildError = 7,
     /// `wasm_alloc` could not satisfy the requested size.
     AllocError = 8,
@@ -171,22 +171,23 @@ pub unsafe fn borrow_input<'a>(
     Ok(unsafe { core::slice::from_raw_parts(input_ptr, input_len as usize) })
 }
 
-/// Serialize `arwtns` into a `Vec<u8>` and forward it to
-/// [`return_owned_buffer`].
+/// Serialize a full-assignment `Vec<F>` via ark-serialize (compressed) and
+/// forward the resulting bytes to [`return_owned_buffer`].
 ///
-/// Centralizes the "ArwtnsFile → bytes → host buffer" pipeline so the macro
+/// Centralizes the "Vec<F> → bytes → host buffer" pipeline so the macro
 /// stays one statement long.
 ///
 /// # Safety
 ///
 /// Same contract as [`return_owned_buffer`].
-pub unsafe fn return_arwtns<F: ark_ff::PrimeField>(
-    arwtns: &ark_ar1cs_wtns::ArwtnsFile<F>,
+pub unsafe fn return_full_assignment<F: ark_ff::PrimeField>(
+    full_assignment: &[F],
     out_ptr_out: *mut *mut u8,
     out_len_out: *mut u32,
 ) -> WitnessAbiCode {
+    use ark_serialize::CanonicalSerialize;
     let mut buf: Vec<u8> = Vec::new();
-    if arwtns.write(&mut buf).is_err() {
+    if full_assignment.serialize_compressed(&mut buf).is_err() {
         return WitnessAbiCode::CircuitBuildError;
     }
     // SAFETY: contract delegated to caller.

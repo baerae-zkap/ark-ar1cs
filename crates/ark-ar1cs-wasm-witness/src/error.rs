@@ -1,11 +1,10 @@
 //! Top-level errors emitted by the generic witness layer.
 
-use ark_ar1cs_wtns::ArwtnsError;
 use ark_relations::gr1cs::SynthesisError;
 
 use crate::abi::WitnessAbiCode;
 
-/// Errors raised by [`crate::circuit_to_arwtns`].
+/// Errors raised by [`crate::synthesize_full_assignment`].
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum WitnessError {
@@ -25,9 +24,9 @@ pub enum WitnessError {
     #[error("constraint system missing implicit 1-wire at index 0")]
     MissingOneWire,
 
-    /// `.arwtns` serialization failed downstream.
-    #[error(transparent)]
-    Arwtns(#[from] ArwtnsError),
+    /// Witness assignment `Vec<F>` serialization failed downstream.
+    #[error("witness serialize: {0}")]
+    Serialize(#[from] ark_serialize::SerializationError),
 }
 
 impl From<WitnessError> for WitnessAbiCode {
@@ -36,7 +35,7 @@ impl From<WitnessError> for WitnessAbiCode {
             WitnessError::Synthesis(_) => WitnessAbiCode::CircuitBuildError,
             WitnessError::ConstraintSystemUnavailable => WitnessAbiCode::CircuitBuildError,
             WitnessError::MissingOneWire => WitnessAbiCode::CircuitBuildError,
-            WitnessError::Arwtns(_) => WitnessAbiCode::CircuitBuildError,
+            WitnessError::Serialize(_) => WitnessAbiCode::CircuitBuildError,
         }
     }
 }
