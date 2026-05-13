@@ -4,14 +4,13 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Circuit-agnostic Groth16 prover/verifier consuming .arzkey + .arwtns artifacts"
+description = "Circuit-agnostic Groth16 prover/verifier consuming .arzkey artifacts"
 categories = ["cryptography"]
 keywords = ["zk-snark", "groth16", "arkworks", "r1cs"]
 
 [dependencies]
 ark-ar1cs-format = { path = "../ark-ar1cs-format" }
 ark-ar1cs-zkey   = { path = "../ark-ar1cs-zkey" }
-ark-ar1cs-wtns   = { path = "../ark-ar1cs-wtns" }
 ark-ec           = { workspace = true }
 ark-ff           = { workspace = true }
 ark-groth16      = { workspace = true }

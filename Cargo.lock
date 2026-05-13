@@ -77,7 +77,6 @@ version = "0.1.0"
 dependencies = [
  "ark-ar1cs-format",
  "ark-ar1cs-prover",
- "ark-ar1cs-wtns",
  "ark-ar1cs-zkey",
  "ark-bls12-381",
  "ark-bn254",
@@ -113,7 +112,6 @@ name = "ark-ar1cs-prover"
 version = "0.1.0"
 dependencies = [
  "ark-ar1cs-format",
- "ark-ar1cs-wtns",
  "ark-ar1cs-zkey",
  "ark-bls12-381",
  "ark-bn254",
