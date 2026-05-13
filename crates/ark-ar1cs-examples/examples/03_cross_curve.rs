@@ -36,7 +36,6 @@
 
 use std::error::Error;
 
-use ark_ar1cs::arzkey::ArzkeyFile;
 use ark_ar1cs::format::{ArcsFile, CurveId};
 use ark_ar1cs::{prove, verify};
 use ark_bls12_381::Bls12_381;
@@ -103,7 +102,7 @@ fn run_curve<E: Pairing>(curve_id: CurveId, x_value: u64) -> Result<bool, Box<dy
         y: E::ScalarField::from(0u64),
     })?;
     let arcs = ArcsFile::<E::ScalarField>::from_matrices(curve_id, &matrices);
-    let arzkey = ArzkeyFile::<E>::from_setup_output(arcs, pk);
+    let arzkey = ark_ar1cs_build::from_setup_output::<E>(arcs, pk);
 
     // SquareCircuit wire layout: [ONE, y (instance), x (witness)].
     let full_assignment: Vec<E::ScalarField> = vec![E::ScalarField::ONE, y, x];

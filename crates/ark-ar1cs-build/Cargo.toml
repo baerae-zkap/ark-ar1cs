@@ -1,0 +1,26 @@
+[package]
+name = "ark-ar1cs-build"
+description = "Build-time toolchain: Circuit → .ar1cs + .arzkey"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+categories = ["cryptography", "development-tools"]
+keywords = ["zk-snark", "groth16", "arkworks", "r1cs", "build"]
+
+[dependencies]
+ark-ar1cs     = { path = "../ark-ar1cs" }
+ark-ec        = { workspace = true }
+ark-ff        = { workspace = true }
+ark-groth16   = { workspace = true }
+ark-relations = { workspace = true }
+ark-serialize = { workspace = true }
+ark-std       = { workspace = true }
+blake3        = { workspace = true }
+thiserror     = { workspace = true }
+
+[dev-dependencies]
+ark-bn254 = { workspace = true }
+ark-ff    = { workspace = true, features = ["std"] }
+rand      = { workspace = true }
+tempfile  = { workspace = true }

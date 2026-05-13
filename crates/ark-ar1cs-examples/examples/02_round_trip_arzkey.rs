@@ -66,7 +66,7 @@ fn build_arzkey() -> Result<ArzkeyFile<Bn254>, Box<dyn Error>> {
         .map_err(|e| format!("ConstraintMatrices::from_cs failed: {e:?}"))?;
 
     let arcs = ArcsFile::<Fr>::from_matrices(CurveId::Bn254, &matrices);
-    Ok(ArzkeyFile::<Bn254>::from_setup_output(arcs, pk))
+    Ok(ark_ar1cs_build::from_setup_output::<Bn254>(arcs, pk))
 }
 
 fn main() -> Result<(), Box<dyn Error>> {

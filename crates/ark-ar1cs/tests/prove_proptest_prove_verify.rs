@@ -20,7 +20,6 @@
 
 #![cfg(not(target_arch = "wasm32"))]
 
-use ark_ar1cs::arzkey::ArzkeyFile;
 use ark_ar1cs::format::importer::ImportedCircuit;
 use ark_ar1cs::format::test_fixtures::arb_matrices_with_assignment;
 use ark_ar1cs::format::{ArcsFile, CurveId};
@@ -67,7 +66,7 @@ proptest! {
         let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(circuit, &mut rng)
             .expect("Groth16 setup should not fail for bounded R1CS-valid matrices");
 
-        let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
+        let arzkey = ark_ar1cs_build::from_setup_output::<Bn254>(arcs, pk);
 
         let proof = prove(&arzkey, &z, &mut rng)
             .expect("prove() must not fail on a generator-guaranteed valid assignment");

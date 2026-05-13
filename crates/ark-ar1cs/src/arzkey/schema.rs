@@ -7,7 +7,7 @@ use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 
 use crate::arzkey::{
     error::ArzkeyError,
-    header::{ArzkeyHeader, ARZKEY_HEADER_SIZE, ARZKEY_VERSION_CURRENT},
+    header::{ArzkeyHeader, ARZKEY_HEADER_SIZE},
 };
 
 /// Maximum size of an `.arzkey` file accepted by [`ArzkeyFile::read`].
@@ -32,51 +32,6 @@ pub struct ArzkeyFile<E: Pairing> {
 }
 
 impl<E: Pairing> ArzkeyFile<E> {
-    /// Atomic constructor — `vk` is derived from `pk.vk.clone()` so PK/VK
-    /// drift inside a single `.arzkey` is structurally impossible (ARCH-3).
-    /// Caller cannot supply a `vk` that disagrees with `pk.vk`.
-    pub fn from_setup_output(arcs: ArcsFile<E::ScalarField>, pk: ProvingKey<E>) -> Self {
-        let curve_id = arcs.header.curve_id;
-        let num_instance_variables = arcs.header.num_instance_variables;
-        let num_witness_variables = arcs.header.num_witness_variables;
-        let num_constraints = arcs.header.num_constraints;
-        let ar1cs_blake3 = arcs.body_blake3();
-
-        let mut arcs_bytes = Vec::new();
-        arcs.write(&mut arcs_bytes)
-            .expect("ArcsFile write to Vec cannot fail");
-        let ar1cs_byte_len = arcs_bytes.len() as u64;
-
-        let vk = pk.vk.clone();
-        let vk_byte_len = vk.uncompressed_size() as u64;
-        let mut vk_bytes = Vec::with_capacity(vk_byte_len as usize);
-        vk.serialize_uncompressed(&mut vk_bytes)
-            .expect("VerifyingKey serialize to Vec cannot fail");
-        let vk_blake3 = *blake3::hash(&vk_bytes).as_bytes();
-
-        let pk_byte_len = pk.uncompressed_size() as u64;
-
-        let header = ArzkeyHeader {
-            version: ARZKEY_VERSION_CURRENT,
-            curve_id,
-            ar1cs_blake3,
-            vk_blake3,
-            ar1cs_byte_len,
-            vk_byte_len,
-            pk_byte_len,
-            num_instance_variables,
-            num_witness_variables,
-            num_constraints,
-        };
-
-        ArzkeyFile {
-            header,
-            arcs,
-            vk,
-            pk,
-        }
-    }
-
     pub fn vk(&self) -> &VerifyingKey<E> {
         &self.vk
     }

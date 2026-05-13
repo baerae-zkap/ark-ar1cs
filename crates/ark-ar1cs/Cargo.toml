@@ -45,8 +45,10 @@ proptest = { workspace = true, optional = true }
 # Self-cycle so `cargo test -p ark-ar1cs` activates the test-fixtures
 # feature on the lib for integration tests that reference
 # `format::test_fixtures::*`.
-ark-ar1cs     = { path = ".", features = ["test-fixtures"] }
-ark-bls12-381 = { workspace = true }
+ark-ar1cs       = { path = ".", features = ["test-fixtures"] }
+# Build-time toolchain used by integration tests (exporter, from_setup_output).
+ark-ar1cs-build = { path = "../ark-ar1cs-build" }
+ark-bls12-381   = { workspace = true }
 ark-bn254     = { workspace = true }
 ark-ec        = { workspace = true }
 ark-ff        = { workspace = true, features = ["std"] }

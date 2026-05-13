@@ -116,7 +116,7 @@ fn build_arzkey<C: ConstraintSynthesizer<Fr> + Clone>(circuit: C) -> ArzkeyFile<
     let matrices =
         ark_ar1cs::format::ConstraintMatrices::from_cs(&cs).expect("to_matrices() should not fail");
     let arcs = ArcsFile::<Fr>::from_matrices(CurveId::Bn254, &matrices);
-    ArzkeyFile::<Bn254>::from_setup_output(arcs, pk)
+    ark_ar1cs_build::from_setup_output::<Bn254>(arcs, pk)
 }
 
 /// Header-only partial-read of the VK section.
