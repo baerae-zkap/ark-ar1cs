@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 ark-ar1cs-wasm-witness = { path = "../../..", features = ["test-mock"] }
-ark-ar1cs-format       = { path = "../../../../ark-ar1cs-format" }
+ark-ar1cs              = { path = "../../../../ark-ar1cs" }
 ark-bn254              = { workspace = true }
 ark-ff                 = { workspace = true }
 ark-relations          = { workspace = true }

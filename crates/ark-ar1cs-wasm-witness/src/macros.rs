@@ -19,7 +19,7 @@
 
 use alloc::vec::Vec;
 
-use ark_ar1cs_format::CurveId;
+use ark_ar1cs::format::CurveId;
 use ark_serialize::CanonicalSerialize;
 
 use crate::abi::WitnessAbiCode;

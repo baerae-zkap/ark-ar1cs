@@ -13,8 +13,8 @@
 
 use std::error::Error;
 
-use ark_ar1cs_format::{ArcsFile, CurveId};
-use ark_ar1cs_zkey::ArzkeyFile;
+use ark_ar1cs::arzkey::ArzkeyFile;
+use ark_ar1cs::format::{ArcsFile, CurveId};
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::Groth16;
 use ark_relations::gr1cs::{
@@ -62,7 +62,7 @@ fn build_arzkey() -> Result<ArzkeyFile<Bn254>, Box<dyn Error>> {
     cs.set_mode(SynthesisMode::Setup);
     setup_circuit.generate_constraints(cs.clone())?;
     cs.finalize();
-    let matrices = ark_ar1cs_format::ConstraintMatrices::from_cs(&cs)
+    let matrices = ark_ar1cs::format::ConstraintMatrices::from_cs(&cs)
         .map_err(|e| format!("ConstraintMatrices::from_cs failed: {e:?}"))?;
 
     let arcs = ArcsFile::<Fr>::from_matrices(CurveId::Bn254, &matrices);

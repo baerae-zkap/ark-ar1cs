@@ -11,7 +11,7 @@
 //! verify the embedded circuit identity matches its `.arzkey`, then calls
 //! `witness_generator` to produce the `Vec<F>` ark-serialize bytes of the
 //! full assignment `[F::ONE, instance..., witness...]` suitable for
-//! `ark_ar1cs_prover::prove`.
+//! `ark_ar1cs::prove`.
 //!
 //! See `.omc/plans/2026-05-13-stream-1.md` §"PR 1.1" for the design.
 
@@ -28,10 +28,10 @@ pub mod packed;
 
 #[doc(hidden)]
 pub mod ark_ar1cs_format_reexport {
-    pub use ark_ar1cs_format::CurveId;
+    pub use ark_ar1cs::format::CurveId;
 }
 
-use ark_ar1cs_format::CurveId;
+use ark_ar1cs::format::CurveId;
 use ark_ff::PrimeField;
 use ark_relations::gr1cs::{ConstraintSynthesizer, ConstraintSystem, SynthesisMode};
 
@@ -81,7 +81,7 @@ pub trait WitnessGenerator {
 /// 3. read `instance_assignment[1..]` (skip the implicit `1` wire) and
 ///    `witness_assignment` from the constraint system,
 /// 4. return `[F::ONE, instance..., witness...]` — the exact layout
-///    `ark_ar1cs_prover::prove` expects.
+///    `ark_ar1cs::prove` expects.
 ///
 /// `construct_matrices: false` skips A/B/C row accumulation in
 /// `enforce_constraint` (we never read those rows here — they live in

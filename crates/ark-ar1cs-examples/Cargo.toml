@@ -8,9 +8,7 @@ description = "Runnable end-to-end workflow examples for the ark-ar1cs core crat
 publish = false
 
 [dependencies]
-ark-ar1cs-format = { path = "../ark-ar1cs-format" }
-ark-ar1cs-zkey   = { path = "../ark-ar1cs-zkey" }
-ark-ar1cs-prover = { path = "../ark-ar1cs-prover" }
+ark-ar1cs        = { path = "../ark-ar1cs" }
 ark-bls12-381    = { workspace = true }
 ark-bn254        = { workspace = true }
 ark-ec           = { workspace = true }

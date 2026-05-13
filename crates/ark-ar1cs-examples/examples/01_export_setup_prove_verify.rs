@@ -10,7 +10,7 @@
 //! artifacts handed off across component boundaries):
 //!
 //! 1. **Export** — synthesize a `ConstraintSynthesizer` and write
-//!    `.ar1cs` bytes via `ark_ar1cs_format::exporter::export_circuit`.
+//!    `.ar1cs` bytes via `ark_ar1cs::format::exporter::export_circuit`.
 //! 2. **Setup** — re-import the bytes as an `ImportedCircuit`
 //!    (no original Rust circuit needed) and run
 //!    `Groth16::generate_random_parameters_with_reduction` to produce
@@ -37,7 +37,7 @@
 //! manifest) perform the comparison themselves before calling `prove`:
 //!
 //! ```ignore
-//! use ark_ar1cs_prover::{ArtifactMismatchReason, ProverError};
+//! use ark_ar1cs::{ArtifactMismatchReason, ProverError};
 //!
 //! if arzkey.header.ar1cs_blake3 != expected_ar1cs_blake3 {
 //!     return Err(ProverError::ArtifactMismatch {
@@ -49,11 +49,11 @@
 
 use std::error::Error;
 
-use ark_ar1cs_format::exporter::export_circuit;
-use ark_ar1cs_format::importer::ImportedCircuit;
-use ark_ar1cs_format::{ArcsFile, CurveId};
-use ark_ar1cs_prover::{prove, verify};
-use ark_ar1cs_zkey::ArzkeyFile;
+use ark_ar1cs::arzkey::ArzkeyFile;
+use ark_ar1cs::format::exporter::export_circuit;
+use ark_ar1cs::format::importer::ImportedCircuit;
+use ark_ar1cs::format::{ArcsFile, CurveId};
+use ark_ar1cs::{prove, verify};
 use ark_bn254::{Bn254, Fr};
 use ark_ff::Field;
 use ark_groth16::Groth16;
