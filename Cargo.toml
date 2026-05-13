@@ -2,7 +2,6 @@
 members = [
     "crates/ark-ar1cs",
     "crates/ark-ar1cs-build",
-    "crates/ark-ar1cs-examples",
     "crates/ark-ar1cs-wasm-witness",
     "crates/ark-ar1cs-wasm-witness/tests/fixtures/large-witness-fixture",
 ]
