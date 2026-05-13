@@ -5,6 +5,12 @@
 //! generated code minimal — the macro just hands typed arguments to typed
 //! helpers in this module.
 
+// File-level opt-out of the workspace `unsafe_code = "deny"` policy: this
+// module implements the wasm ABI's pointer / alloc / dealloc boundary.
+// `unsafe_op_in_unsafe_fn` (still enforced at crate level) keeps every
+// `unsafe { ... }` block explicit.
+#![allow(unsafe_code)]
+
 use alloc::alloc::{alloc, dealloc, Layout};
 use alloc::vec::Vec;
 use core::ptr;

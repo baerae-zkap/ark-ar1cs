@@ -21,3 +21,6 @@ postcard               = { workspace = true }
 # codegen-units, opt-level, strip) lives in the workspace root Cargo.toml
 # or is applied via `wasm-opt` post-processing. Per benchmark plan D5,
 # the wasm-opt experiment is deferred until baseline numbers are in.
+
+[lints]
+workspace = true

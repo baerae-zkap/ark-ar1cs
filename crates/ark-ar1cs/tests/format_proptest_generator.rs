@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 //! Generator self-test (Phase D.5 prep).
 //!
 //! Validates that every `(matrices, full_assignment)` pair sampled from

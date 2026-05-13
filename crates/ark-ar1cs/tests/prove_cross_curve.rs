@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 //! Phase D Q3 #2 — BLS12-381 cross-curve e2e.
 //!
 //! BN254 e2e is covered by `tests/e2e.rs`. This file mirrors that flow on

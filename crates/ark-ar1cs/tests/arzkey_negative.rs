@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use ark_ar1cs::arzkey::{ArzkeyError, ArzkeyFile, MAX_ARZKEY_BYTES};
 /// `.arzkey` negative tests — every malformed scenario asserts a distinct
 /// structured `ArzkeyError` variant via exact-match (CQ-4). Includes

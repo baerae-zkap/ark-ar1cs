@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 //! End-to-end closed-loop test: synthesize → setup → prove → verify.
 //!
 //! Exercises the full Phase C public surface (`prove` + `verify`) against a

@@ -15,7 +15,12 @@
 //!
 //! See `.omc/plans/2026-05-13-stream-1.md` §"PR 1.1" for the design.
 
+// Workspace policy enforces `unsafe_code = "deny"`. The wasm ABI files
+// (`abi.rs`, `macros.rs`) opt back in via file-level `#![allow(unsafe_code)]`.
+// Keep the stricter `unsafe_op_in_unsafe_fn` lint here — it isn't part of
+// the workspace policy — so every `unsafe { ... }` block stays explicit.
 #![deny(unsafe_op_in_unsafe_fn)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 extern crate alloc;
 

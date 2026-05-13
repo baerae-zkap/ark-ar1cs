@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 //! Phase D.5(b) — byte-identical round-trip determinism for `ArcsFile<Fr>`.
 //!
 //! For every sampled `ArcsFile`:

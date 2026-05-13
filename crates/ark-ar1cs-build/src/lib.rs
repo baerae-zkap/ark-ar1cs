@@ -4,7 +4,7 @@
 //! This crate hosts the *write-side* helpers that consume an arkworks
 //! `ConstraintSynthesizer` and produce the deployable artifacts.
 
-#![deny(unsafe_code)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 pub mod exporter;
 pub mod setup;

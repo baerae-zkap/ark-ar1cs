@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 //! R1CS pre-flight (OV-1) integration test.
 //!
 //! Demonstrates that an invalid assignment is rejected at `prove()`-time
