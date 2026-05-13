@@ -1,4 +1,4 @@
-//! End-to-end closed-loop test: synthesize → setup → wrap → prove → verify.
+//! End-to-end closed-loop test: synthesize → setup → prove → verify.
 //!
 //! Exercises the full Phase C public surface (`prove` + `verify`) against a
 //! real Groth16 setup over the SquareCircuit fixture (`x * x = y`).
@@ -13,10 +13,10 @@ use common::{seeded_rng, setup_with_witness};
 #[test]
 fn closed_loop_synthesize_setup_prove_verify() {
     // x = 3, y = 9 — the canonical valid SquareCircuit instance.
-    let (arzkey, arwtns) = setup_with_witness(3);
+    let (arzkey, full_assignment) = setup_with_witness(3);
     let mut rng = seeded_rng();
 
-    let proof = prove(&arzkey, &arwtns, &mut rng).expect("prove() must succeed");
+    let proof = prove(&arzkey, &full_assignment, &mut rng).expect("prove() must succeed");
     let ok = verify(&arzkey, &[Fr::from(9u64)], &proof).expect("verify() must not error");
     assert!(ok, "valid proof must verify (Ok(true))");
 }
@@ -28,9 +28,9 @@ fn verify_returns_false_for_wrong_public_input() {
     // returns Ok(false), NOT Err. This contract matters for downstream
     // verifiers that distinguish "proof is well-formed but rejects this
     // statement" from "framework-level error".
-    let (arzkey, arwtns) = setup_with_witness(3);
+    let (arzkey, full_assignment) = setup_with_witness(3);
     let mut rng = seeded_rng();
-    let proof = prove(&arzkey, &arwtns, &mut rng).expect("prove() must succeed");
+    let proof = prove(&arzkey, &full_assignment, &mut rng).expect("prove() must succeed");
 
     let wrong_public = [Fr::from(100u64)];
     let ok = verify(&arzkey, &wrong_public, &proof).expect("verify() must not error");

@@ -24,7 +24,6 @@ use ark_ar1cs_format::importer::ImportedCircuit;
 use ark_ar1cs_format::test_fixtures::arb_matrices_with_assignment;
 use ark_ar1cs_format::{ArcsFile, CurveId};
 use ark_ar1cs_prover::{prove, verify};
-use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ar1cs_zkey::ArzkeyFile;
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::Groth16;
@@ -45,19 +44,16 @@ proptest! {
     ) {
         let (matrices, z) = sample;
 
-        // Split z = [F::ONE, instance..., witness...] back into the explicit
-        // (instance, witness) tuple that ArwtnsFile::from_assignments expects
-        // (the implicit "1" wire is reconstructed by
-        // full_assignment_with_one_wire() inside prove()).
+        // `z` already arrives as the full assignment [F::ONE, instance..., witness...]
+        // that prove() expects. The verifier only sees the explicit instance
+        // slice (excluding the implicit "1" wire at index 0).
         let n_inst_explicit = matrices.num_instance_variables - 1;
-        let instance: Vec<Fr> = z[1..1 + n_inst_explicit].to_vec();
-        let witness: Vec<Fr> = z[1 + n_inst_explicit..].to_vec();
+        let public_inputs: Vec<Fr> = z[1..1 + n_inst_explicit].to_vec();
 
         // Build .ar1cs and feed it to Groth16 setup via ImportedCircuit —
         // mirrors the production export → setup path so the test exercises
         // the same byte boundaries that real consumers cross.
         let arcs = ArcsFile::<Fr>::from_matrices(CurveId::Bn254, &matrices);
-        let ar1cs_blake3 = arcs.body_blake3();
 
         let mut arcs_bytes = Vec::new();
         arcs.write(&mut arcs_bytes).expect("ArcsFile::write should not fail");
@@ -72,16 +68,10 @@ proptest! {
             .expect("Groth16 setup should not fail for bounded R1CS-valid matrices");
 
         let arzkey = ArzkeyFile::<Bn254>::from_setup_output(arcs, pk);
-        let arwtns = ArwtnsFile::<Fr>::from_assignments(
-            CurveId::Bn254,
-            ar1cs_blake3,
-            &instance,
-            &witness,
-        );
 
-        let proof = prove(&arzkey, &arwtns, &mut rng)
+        let proof = prove(&arzkey, &z, &mut rng)
             .expect("prove() must not fail on a generator-guaranteed valid assignment");
-        let ok = verify(&arzkey, &instance, &proof)
+        let ok = verify(&arzkey, &public_inputs, &proof)
             .expect("verify() must not error on a well-formed proof");
         prop_assert!(ok, "Groth16 verify must accept a proof of a valid assignment");
     }
