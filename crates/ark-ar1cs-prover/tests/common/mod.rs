@@ -10,17 +10,18 @@
 //! `setup_with_witness` (BN254) and `setup_with_witness_bls` (BLS12-381)
 //! both wrap a single curve-generic `setup_with_witness_curve<E>` so the
 //! curve choice is explicit at the test site (Phase D Q3 #2 cross-curve
-//! coverage).
+//! coverage). Each helper returns a freshly-built `ArzkeyFile<E>` paired
+//! with the raw `Vec<E::ScalarField>` full assignment
+//! `[F::ONE, y, x]` — the layout that `prove` expects.
 #![allow(dead_code)]
 
 use ark_ar1cs_format::ConstraintMatrices;
 use ark_ar1cs_format::{ArcsFile, CurveId};
-use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ar1cs_zkey::ArzkeyFile;
 use ark_bls12_381::{Bls12_381, Fr as BlsFr};
 use ark_bn254::{Bn254, Fr as BnFr};
 use ark_ec::pairing::Pairing;
-use ark_ff::PrimeField;
+use ark_ff::{Field, PrimeField};
 use ark_groth16::{Groth16, ProvingKey};
 use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystem, ConstraintSystemRef, LinearCombination,
@@ -66,12 +67,12 @@ where
 }
 
 /// Curve-generic e2e helper: run Groth16 setup over `E`, wrap as `.arzkey`,
-/// compute `(x, y = x*x)`, wrap witness as `.arwtns`. Both artifacts share
-/// the same `ar1cs_blake3` so `bind_check` passes by construction.
+/// compute `(x, y = x*x)`, and build the full assignment
+/// `[F::ONE, y, x]` directly as a `Vec<E::ScalarField>`.
 fn setup_with_witness_curve<E: Pairing>(
     curve_id: CurveId,
     x_value: u64,
-) -> (ArzkeyFile<E>, ArwtnsFile<E::ScalarField>) {
+) -> (ArzkeyFile<E>, Vec<E::ScalarField>) {
     let x = E::ScalarField::from(x_value);
     let y = x * x;
 
@@ -89,25 +90,24 @@ fn setup_with_witness_curve<E: Pairing>(
         y: E::ScalarField::from(0u64),
     });
     let arcs = ArcsFile::from_matrices(curve_id, &matrices);
-    let ar1cs_blake3 = arcs.body_blake3();
     let arzkey = ArzkeyFile::<E>::from_setup_output(arcs, pk);
 
-    let arwtns = ArwtnsFile::<E::ScalarField>::from_assignments(curve_id, ar1cs_blake3, &[y], &[x]);
+    // SquareCircuit wire layout: [ONE, y (instance), x (witness)].
+    let full_assignment = vec![E::ScalarField::ONE, y, x];
 
-    (arzkey, arwtns)
+    (arzkey, full_assignment)
 }
 
 /// One-shot helper that runs a real Groth16 setup over BN254, packages the
-/// result as an `ArzkeyFile<Bn254>`, and produces an `ArwtnsFile<Fr>`
-/// carrying the witness assignments for `(x, y = x*x)`. Both artifacts
-/// share the same `ar1cs_blake3` so [`bind_check`] passes by construction.
-pub fn setup_with_witness(x_value: u64) -> (ArzkeyFile<Bn254>, ArwtnsFile<BnFr>) {
+/// result as an `ArzkeyFile<Bn254>`, and returns the matching full
+/// assignment `[Fr::ONE, y, x]` for `(x, y = x*x)`.
+pub fn setup_with_witness(x_value: u64) -> (ArzkeyFile<Bn254>, Vec<BnFr>) {
     setup_with_witness_curve::<Bn254>(CurveId::Bn254, x_value)
 }
 
 /// BLS12-381 mirror of [`setup_with_witness`]. Used by the Phase D Q3 #2
-/// cross-curve e2e test to verify the prover, envelopes, and bind rules
-/// stay correct under a second pairing curve.
-pub fn setup_with_witness_bls(x_value: u64) -> (ArzkeyFile<Bls12_381>, ArwtnsFile<BlsFr>) {
+/// cross-curve e2e test to verify the prover stays correct under a second
+/// pairing curve.
+pub fn setup_with_witness_bls(x_value: u64) -> (ArzkeyFile<Bls12_381>, Vec<BlsFr>) {
     setup_with_witness_curve::<Bls12_381>(CurveId::Bls12_381, x_value)
 }

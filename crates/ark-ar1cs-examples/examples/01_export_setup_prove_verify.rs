@@ -6,8 +6,8 @@
 //! at prove time.
 //!
 //! Pipeline (all five steps run in this single binary; in production
-//! they run on different machines and consume `.ar1cs` / `.arzkey` /
-//! `.arwtns` byte artifacts handed off across component boundaries):
+//! they run on different machines and consume `.ar1cs` / `.arzkey` byte
+//! artifacts handed off across component boundaries):
 //!
 //! 1. **Export** — synthesize a `ConstraintSynthesizer` and write
 //!    `.ar1cs` bytes via `ark_ar1cs_format::exporter::export_circuit`.
@@ -20,13 +20,32 @@
 //!    `ArzkeyFile::from_setup_output(arcs, pk)`. The verifying key is
 //!    derived internally from `pk.vk.clone()` so PK/VK drift is
 //!    structurally impossible.
-//! 4. **Wrap witness** — compute the assignment `(x, y = x*x)` for a
-//!    concrete instance and wrap it as `.arwtns` via
-//!    `ArwtnsFile::from_assignments`. The body excludes the implicit
-//!    "1" wire — the prover prepends it.
-//! 5. **Prove and verify** — `prove(&arzkey, &arwtns, &mut rng)` runs
-//!    bind_check + R1CS pre-flight + Groth16 proof construction;
+//! 4. **Build full assignment** — compute the witness `(x, y = x*x)`
+//!    for a concrete instance and assemble the prover-shaped
+//!    `[Fr::ONE, y, x]` vector directly. ark-ar1cs no longer requires
+//!    the caller to pass through a `.arwtns` envelope — `prove`
+//!    consumes a raw slice.
+//! 5. **Prove and verify** — `prove(&arzkey, &full_assignment, &mut rng)`
+//!    runs the R1CS pre-flight + Groth16 proof construction;
 //!    `verify(&arzkey, &public_inputs, &proof)` checks the pairing.
+//!
+//! ## Optional header binding (caller's one-line responsibility)
+//!
+//! ark-ar1cs no longer wires a `bind_check` automatically. Production
+//! callers who want to make sure the loaded `.arzkey` matches an
+//! out-of-band expected circuit identity (e.g. from a deployment
+//! manifest) perform the comparison themselves before calling `prove`:
+//!
+//! ```ignore
+//! use ark_ar1cs_prover::{ArtifactMismatchReason, ProverError};
+//!
+//! if arzkey.header.ar1cs_blake3 != expected_ar1cs_blake3 {
+//!     return Err(ProverError::ArtifactMismatch {
+//!         reason: ArtifactMismatchReason::Ar1csBlake3,
+//!     });
+//! }
+//! prove(&arzkey, &full_assignment, &mut rng)?;
+//! ```
 
 use std::error::Error;
 
@@ -34,9 +53,9 @@ use ark_ar1cs_format::exporter::export_circuit;
 use ark_ar1cs_format::importer::ImportedCircuit;
 use ark_ar1cs_format::{ArcsFile, CurveId};
 use ark_ar1cs_prover::{prove, verify};
-use ark_ar1cs_wtns::ArwtnsFile;
 use ark_ar1cs_zkey::ArzkeyFile;
 use ark_bn254::{Bn254, Fr};
+use ark_ff::Field;
 use ark_groth16::Groth16;
 use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystemRef, LinearCombination, SynthesisError,
@@ -99,24 +118,25 @@ fn main() -> Result<(), Box<dyn Error>> {
         arzkey.header.ar1cs_byte_len, arzkey.header.vk_byte_len, arzkey.header.pk_byte_len,
     );
 
-    // 4. Witness producer side — compute (x, y = x*x) and emit .arwtns.
-    //    The instance slice excludes the implicit "1" wire; the prover
-    //    prepends F::ONE inside full_assignment_with_one_wire().
+    // 4. Witness producer side — compute (x, y = x*x) and build the full
+    //    assignment vector [Fr::ONE, y, x] that prove() consumes.
+    //    Production callers can additionally compare
+    //    `arzkey.header.ar1cs_blake3` against an expected circuit
+    //    identity here (see the module-level doc-comment for the
+    //    one-line pattern).
     let x = Fr::from(3u64);
     let y = x * x;
-    let arwtns = ArwtnsFile::<Fr>::from_assignments(
-        CurveId::Bn254,
-        arzkey.header.ar1cs_blake3,
-        &[y], // public input
-        &[x], // private witness
+    let full_assignment: Vec<Fr> = vec![Fr::ONE, y, x];
+    println!(
+        "[4/5] full assignment → [Fr::ONE, y, x] (len={})",
+        full_assignment.len()
     );
-    println!("[4/5] arwtns wrapped  → instance=[y], witness=[x]");
 
-    // 5. prove() runs the four bind rules, the R1CS pre-flight, and
+    // 5. prove() runs the length check, the R1CS pre-flight, and the
     //    Groth16 proof construction. verify() checks the pairing
     //    against arzkey.vk(); Ok(true) means the public input + proof
     //    are consistent with the embedded VK.
-    let proof = prove(&arzkey, &arwtns, &mut rng)?;
+    let proof = prove(&arzkey, &full_assignment, &mut rng)?;
     let public_inputs = [y];
     let ok = verify(&arzkey, &public_inputs, &proof)?;
     println!("[5/5] verify          → {ok}");

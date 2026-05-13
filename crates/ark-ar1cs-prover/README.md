@@ -1,13 +1,12 @@
 # ark-ar1cs-prover
 
-Circuit-agnostic Groth16 prover and verifier consuming `.arzkey + .arwtns`
-artifacts. One of the [four core surface
-crates](../../README.md#project-surface) of ark-ar1cs.
+Circuit-agnostic Groth16 prover and verifier consuming `.arzkey` artifacts
+and a raw `&[F]` full assignment. One of the core surface crates of
+ark-ar1cs.
 
 `prove` never re-runs the original `ConstraintSynthesizer`. It reads the
-matrices and the proving key from `.arzkey`, the assignment from
-`.arwtns`, cross-checks them with four bind rules, R1CS-pre-flights the
-assignment, and hands the matrices and assignment to
+matrices and the proving key from `.arzkey`, R1CS-pre-flights the caller's
+full-assignment slice, and hands the matrices and assignment to
 `Groth16::create_proof_with_reduction_and_matrices`. The verifier mirrors
 this on the read side, against the verifying key embedded in `.arzkey`.
 
@@ -15,14 +14,14 @@ this on the read side, against the verifying key embedded in `.arzkey`.
 
 ```rust
 pub fn prove<E: Pairing, R: Rng + CryptoRng>(
-    arzkey: &ArzkeyFile<E>,
-    arwtns: &ArwtnsFile<E::ScalarField>,
-    rng:    &mut R,
+    arzkey:          &ArzkeyFile<E>,
+    full_assignment: &[E::ScalarField],   // [F::ONE, instance..., witness...]
+    rng:             &mut R,
 ) -> Result<Proof<E>, ProverError>;
 
 pub fn verify<E: Pairing>(
     arzkey:        &ArzkeyFile<E>,
-    public_inputs: &[E::ScalarField],   // excludes implicit "1"
+    public_inputs: &[E::ScalarField],     // excludes implicit "1"
     proof:         &Proof<E>,
 ) -> Result<bool, ProverError>;
 ```
@@ -40,46 +39,43 @@ site by looping over `prove`.
 ## What `prove` does (and why)
 
 ```text
-1. bind_check(&arzkey, &arwtns)
-2. let z = arwtns.full_assignment_with_one_wire();
-3. preflight::check_r1cs_satisfaction(arzkey.arcs(), &z)?;
-4. let r, s = E::ScalarField::rand(rng);
-5. Groth16::create_proof_with_reduction_and_matrices(
+1. length check: full_assignment.len() == arzkey.num_instance_variables
+                                          + arzkey.num_witness_variables
+2. preflight::check_r1cs_satisfaction(arzkey.arcs(), full_assignment)?;
+3. let r, s = E::ScalarField::rand(rng);
+4. Groth16::create_proof_with_reduction_and_matrices(
        arzkey.pk(), r, s,
        &arzkey.arcs().clone().into_matrices(),
        arzkey.header.num_instance_variables as usize,
        arzkey.header.num_constraints as usize,
-       &z,
+       full_assignment,
    )
 ```
 
-### Step 1 — Four bind rules (cheap → expensive)
+### Optional header binding (caller's one-line responsibility)
 
-Each rule maps to a distinct `ArtifactMismatchReason` variant. Tests
-match exactly on the variant — never on a string prefix.
+`prove` does **not** automatically validate that the loaded `.arzkey`
+matches a specific expected circuit identity. Production callers who
+load `.arzkey` bytes from disk or network should compare
+`arzkey.header.ar1cs_blake3` against an out-of-band expected value
+(e.g. from a deployment manifest) before calling `prove`:
 
-| Rule | Cost | Failure variant |
-|------|------|-----------------|
-| 1. `arzkey.curve_id == arwtns.curve_id`                              | `O(1)` | `CurveId { arzkey, arwtns }` |
-| 2. `arzkey.ar1cs_blake3 == arwtns.ar1cs_blake3`                      | `O(1)` 32-byte memcmp | `Ar1csBlake3` |
-| 4. `arwtns.num_instance + arwtns.num_witness == arzkey.num_instance_variables - 1 + arzkey.num_witness_variables` | `O(1)` | `CountMismatch { expected, got }` |
-| 3. `arzkey.arcs().body_blake3() == arzkey.header.ar1cs_blake3`       | `O(ar1cs_byte_len)` | `SelfConsistency` |
+```rust
+use ark_ar1cs_prover::{ArtifactMismatchReason, ProverError};
 
-Rule 3 runs **last** so wrong-curve and wrong-circuit pairs reject in
-microseconds. Trailer integrity is not re-checked here — both
-`ArzkeyFile::read` and `ArwtnsFile::read` have already verified their
-respective Blake3 trailers at parse time.
+if arzkey.header.ar1cs_blake3 != expected_ar1cs_blake3 {
+    return Err(ProverError::ArtifactMismatch {
+        reason: ArtifactMismatchReason::Ar1csBlake3,
+    });
+}
+prove(&arzkey, &full_assignment, &mut rng)?;
+```
 
-#### Latency budgets
+Wrong-curve `.arzkey` files are rejected one layer earlier:
+`ArzkeyFile::<E>::read` validates header `curve_id` against type-level
+`E` at parse time, so the prover never sees a wrong-curve artifact.
 
-- **5a** — Rules 1, 2, 4 (`O(1)`): `< 1 ms` regardless of file size, on
-  every target including wasm.
-- **5b** — Rule 3 (`O(ar1cs_byte_len)`): `< 50 ms` on x86, `< 200 ms` on
-  wasm for typical `<100 MB` embedded `.ar1cs`.
-- **5c** — Parse-time trailer integrity (separate from bind-time, runs
-  during `read`): `< 500 ms` on x86 for 1 GiB.
-
-### Step 3 — R1CS pre-flight is mandatory
+### R1CS pre-flight is mandatory
 
 `Groth16::create_proof_with_reduction_and_matrices` does **not** verify
 that the assignment satisfies the R1CS. Without an explicit pre-flight,
@@ -100,10 +96,10 @@ prover is responsible for catching this case.
 
 | Variant | Cause |
 |---------|-------|
-| `ArtifactMismatch { reason }` | One of the four bind rules failed (see table above) |
+| `ArtifactMismatch { reason }` | Not raised automatically by `prove`. Available for callers performing their own header binding (see "Optional header binding" above). |
 | `AssignmentNotSatisfying { row }` | R1CS pre-flight failed at `row` |
 | `CorruptArtifact` | Internal invariant violated; effectively unreachable for files produced by `read`/`from_setup_output` |
-| `WitnessLengthMismatch { expected, got }` | Reconstructed full assignment length disagrees with what the matrices expect |
+| `WitnessLengthMismatch { expected, got }` | `full_assignment.len()` disagrees with what the proving key expects |
 | `Groth16(...)` | Forwarded from `ark_relations::r1cs::SynthesisError` |
 | `SerializationError(...)` | Forwarded from `ark_serialize` |
 
@@ -143,8 +139,6 @@ randomness source explicitly. For browser deployments using
 - [`ark-ar1cs-format`](../ark-ar1cs-format) — `.ar1cs` envelope and
   `body_blake3()`.
 - [`ark-ar1cs-zkey`](../ark-ar1cs-zkey) — `.arzkey` setup-output format
-  consumed by `prove`.
-- [`ark-ar1cs-wtns`](../ark-ar1cs-wtns) — `.arwtns` witness format
   consumed by `prove`.
 - [Repository root](../../README.md) — workspace overview, three core
   principles.

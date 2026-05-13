@@ -10,7 +10,6 @@ publish = false
 [dependencies]
 ark-ar1cs-format = { path = "../ark-ar1cs-format" }
 ark-ar1cs-zkey   = { path = "../ark-ar1cs-zkey" }
-ark-ar1cs-wtns   = { path = "../ark-ar1cs-wtns" }
 ark-ar1cs-prover = { path = "../ark-ar1cs-prover" }
 ark-bls12-381    = { workspace = true }
 ark-bn254        = { workspace = true }
