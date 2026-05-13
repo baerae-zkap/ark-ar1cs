@@ -4,7 +4,6 @@
 
 pub mod compat;
 pub mod error;
-pub mod exporter;
 pub mod header;
 pub mod importer;
 pub mod matrix;

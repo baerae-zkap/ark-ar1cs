@@ -4,9 +4,9 @@
 ///   - num_instance_variables = 2 (implicit "1" wire + y)
 ///   - num_witness_variables  = 1 (x)
 ///   - num_constraints        = 1 (x * x = y)
-use ark_ar1cs::format::exporter::export_circuit;
 use ark_ar1cs::format::importer::ImportedCircuit;
 use ark_ar1cs::format::CurveId;
+use ark_ar1cs_build::export_circuit;
 use ark_bn254::{Bn254, Fr};
 use ark_groth16::Groth16;
 use ark_relations::gr1cs::{
