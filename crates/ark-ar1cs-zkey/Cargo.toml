@@ -32,6 +32,3 @@ ark-std       = { workspace = true }
 blake3        = { workspace = true }
 rand          = { workspace = true }
 tempfile      = { workspace = true }
-
-[lints]
-workspace = true

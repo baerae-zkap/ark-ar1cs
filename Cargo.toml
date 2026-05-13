@@ -39,20 +39,7 @@ serde         = { version = "1", default-features = false, features = ["derive",
 tempfile      = { version = "3" }
 thiserror     = { version = "2" }
 
-[workspace.lints.rust]
-# unsafe_code is intentionally NOT denied at workspace level: ark-ar1cs-wasm-witness
-# has hand-audited unsafe blocks in its wasm32 ABI surface (abi.rs, macros.rs).
-# The four library crates that should be unsafe-free each carry their own
-# `#![deny(unsafe_code)]` in lib.rs (format, prover, zkey, wtns).
-# All rust lints are `warn` in Stream 0; Stream 3 selectively promotes to `deny`
-# after auditing existing violations.
-missing_docs    = "warn"
-unused_must_use = "warn"
-unreachable_pub = "warn"
-
-[workspace.lints.clippy]
-unwrap_used = "warn"
-expect_used = "warn"
-panic       = "warn"
-todo        = "warn"
-dbg_macro   = "warn"
+# [workspace.lints] deferred to Stream 3: CI uses `cargo clippy --all -- -D warnings`
+# (.github/workflows/ci.yml:35), so introducing `warn` lints here would immediately
+# break CI. Stream 3 audits existing unwrap/expect/missing-doc sites first, then
+# introduces a workspace lint policy that the codebase already satisfies.

@@ -53,6 +53,3 @@ required-features = ["test-mock"]
 [[example]]
 name = "native_dump_arwtns"
 required-features = ["test-mock"]
-
-[lints]
-workspace = true
