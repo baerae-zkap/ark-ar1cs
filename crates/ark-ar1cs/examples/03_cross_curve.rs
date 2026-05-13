@@ -15,24 +15,21 @@
 //!
 //! ## Optional header binding (caller's one-line responsibility)
 //!
-//! ark-ar1cs no longer wires a `bind_check` automatically. If a caller
-//! wants to confirm the loaded `.arzkey` matches an expected circuit
+//! `prove` does not bind circuit identity inside the call. If a caller
+//! wants to confirm the loaded artifacts match an expected circuit
 //! identity, the comparison is one line before `prove`:
 //!
 //! ```ignore
-//! use ark_ar1cs::{ArtifactMismatchReason, ProverError};
-//!
-//! if arzkey.header.ar1cs_blake3 != expected_ar1cs_blake3 {
-//!     return Err(ProverError::ArtifactMismatch {
-//!         reason: ArtifactMismatchReason::Ar1csBlake3,
-//!     });
+//! if arzkey.arcs().body_blake3() != manifest.expected_ar1cs_blake3 {
+//!     return Err(MyCallerError::WrongCircuitArtifact);
 //! }
-//! prove(&arzkey, &full_assignment, &mut rng)?;
+//! prove(arzkey.pk(), arzkey.arcs(), &full_assignment, &mut rng)?;
 //! ```
 //!
-//! (Wrong-curve `.arzkey` files are rejected one layer earlier by
-//! `ArzkeyFile::<E>::read` at parse time — see the integration test
-//! `tests/cross_curve.rs::wrong_curve_arzkey_rejected_at_parse_time`.)
+//! Wrong-curve `.arzkey` bytes are rejected one layer earlier by
+//! `ArzkeyFile::<E>::read` at parse time (the `prove` signature itself
+//! also enforces curve agreement at the *type* level —
+//! `&ProvingKey<E>` + `&ArcsFile<E::ScalarField>` share `E`).
 
 use std::error::Error;
 
@@ -107,7 +104,7 @@ fn run_curve<E: Pairing>(curve_id: CurveId, x_value: u64) -> Result<bool, Box<dy
     // SquareCircuit wire layout: [ONE, y (instance), x (witness)].
     let full_assignment: Vec<E::ScalarField> = vec![E::ScalarField::ONE, y, x];
 
-    let proof = prove(&arzkey, &full_assignment, &mut rng)?;
+    let proof = prove(arzkey.pk(), arzkey.arcs(), &full_assignment, &mut rng)?;
     let ok = verify(&arzkey, &[y], &proof)?;
     Ok(ok)
 }

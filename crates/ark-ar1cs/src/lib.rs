@@ -3,33 +3,37 @@
 //!
 //! Public surface:
 //!   * [`format`] — `.ar1cs` envelope (matrices + header).
+//!   * [`witness`] — generic `ConstraintSynthesizer → Vec<F>` helper
+//!     ([`synthesize_full_assignment`] / [`WitnessError`], also
+//!     re-exported at crate root).
 //!   * [`arzkey`] — `.arzkey` setup-output (matrices + VK + PK).
-//!   * [`prove`] / [`verify`] — Groth16 prover/verifier consuming a parsed
-//!     `ArzkeyFile` and a full assignment slice.
+//!     Removed in a later commit of the feature-boundary migration;
+//!     transitional today.
+//!   * [`prove`] / [`verify`] — Groth16 prover and verifier wrapper.
+//!     `prove` takes `(&ProvingKey<E>, &ArcsFile<E::ScalarField>,
+//!     &[E::ScalarField], &mut R)` and runs a length + R1CS preflight
+//!     before forwarding to `Groth16::create_proof_with_reduction_and_matrices`.
 //!
 //! ## Caller-side binding (recommended pattern)
 //!
-//! As of Stream 1, [`prove`] does not perform `ar1cs_blake3` binding
-//! automatically; callers compare the arzkey's circuit identity hash against
-//! a known-good value (deployment manifest, on-chain registry, etc.) before
-//! invoking `prove`:
+//! [`prove`] does not bind circuit identity inside the call. Callers
+//! compare the parsed `.ar1cs` body hash against a known-good value
+//! (deployment manifest, on-chain registry, etc.) before invoking
+//! `prove`:
 //!
 //! ```rust,ignore
-//! if arzkey.header.ar1cs_blake3 != expected_ar1cs_blake3 {
-//!     return Err(ProverError::ArtifactMismatch {
-//!         reason: ArtifactMismatchReason::Ar1csBlake3,
-//!     });
+//! if arcs.body_blake3() != manifest.expected_ar1cs_blake3 {
+//!     return Err(MyCallerError::WrongCircuitArtifact);
 //! }
-//! let proof = ark_ar1cs::prove(&arzkey, &full_assignment, &mut rng)?;
+//! let proof = ark_ar1cs::prove(&pk, &arcs, &full_assignment, &mut rng)?;
 //! ```
 //!
-//! The remaining historical bind rules are auto-guaranteed elsewhere:
-//! `curve_id` by `ArzkeyFile::<E>::read`, body-hash self-consistency by
-//! `ArcsFile::read`, and instance/witness count by `prove`'s automatic
-//! [`ProverError::WitnessLengthMismatch`].
+//! Curve agreement between `pk` and `arcs` is enforced at the type
+//! level (both carry the same `E`). Body-hash self-consistency is
+//! verified by `ArcsFile::read`. Witness length is checked by `prove`
+//! and surfaces as [`ProverError::WitnessLengthMismatch`].
 //!
-//! See `.omc/plans/2026-05-13-stream-1.md` §"PR 1.2" for the crate-fusion
-//! history.
+//! See `docs/artifact-trust-boundary.md` for the boundary rationale.
 
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
@@ -43,6 +47,6 @@ mod prove_error;
 mod verifier;
 
 pub use prove::prove;
-pub use prove_error::{ArtifactMismatchReason, ProverError};
+pub use prove_error::ProverError;
 pub use verifier::verify;
 pub use witness::{synthesize_full_assignment, WitnessError};

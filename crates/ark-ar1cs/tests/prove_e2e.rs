@@ -18,7 +18,7 @@ fn closed_loop_synthesize_setup_prove_verify() {
     let (arzkey, full_assignment) = setup_with_witness(3);
     let mut rng = seeded_rng();
 
-    let proof = prove(&arzkey, &full_assignment, &mut rng).expect("prove() must succeed");
+    let proof = prove(arzkey.pk(), arzkey.arcs(), &full_assignment, &mut rng).expect("prove() must succeed");
     let ok = verify(&arzkey, &[Fr::from(9u64)], &proof).expect("verify() must not error");
     assert!(ok, "valid proof must verify (Ok(true))");
 }
@@ -32,7 +32,7 @@ fn verify_returns_false_for_wrong_public_input() {
     // statement" from "framework-level error".
     let (arzkey, full_assignment) = setup_with_witness(3);
     let mut rng = seeded_rng();
-    let proof = prove(&arzkey, &full_assignment, &mut rng).expect("prove() must succeed");
+    let proof = prove(arzkey.pk(), arzkey.arcs(), &full_assignment, &mut rng).expect("prove() must succeed");
 
     let wrong_public = [Fr::from(100u64)];
     let ok = verify(&arzkey, &wrong_public, &proof).expect("verify() must not error");

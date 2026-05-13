@@ -70,7 +70,7 @@ proptest! {
 
         let arzkey = ark_ar1cs_build::from_setup_output::<Bn254>(arcs, pk);
 
-        let proof = prove(&arzkey, &z, &mut rng)
+        let proof = prove(arzkey.pk(), arzkey.arcs(), &z, &mut rng)
             .expect("prove() must not fail on a generator-guaranteed valid assignment");
         let ok = verify(&arzkey, &public_inputs, &proof)
             .expect("verify() must not error on a well-formed proof");

@@ -30,7 +30,8 @@ fn invalid_assignment_rejected_before_groth16() {
     let lying_assignment: Vec<Fr> = vec![Fr::ONE, Fr::from(10u64), Fr::from(3u64)];
 
     let mut rng = seeded_rng();
-    let err = prove(&arzkey, &lying_assignment, &mut rng).expect_err("prove() must reject");
+    let err = prove(arzkey.pk(), arzkey.arcs(), &lying_assignment, &mut rng)
+        .expect_err("prove() must reject");
     assert!(
         matches!(err, ProverError::AssignmentNotSatisfying { row: 0 }),
         "expected AssignmentNotSatisfying {{ row: 0 }}, got {err:?}"
@@ -47,7 +48,8 @@ fn length_mismatch_rejected_before_preflight() {
     let short_assignment: Vec<Fr> = vec![Fr::ONE, Fr::from(9u64)];
 
     let mut rng = seeded_rng();
-    let err = prove(&arzkey, &short_assignment, &mut rng).expect_err("prove() must reject");
+    let err = prove(arzkey.pk(), arzkey.arcs(), &short_assignment, &mut rng)
+        .expect_err("prove() must reject");
     let expected =
         (arzkey.header.num_instance_variables + arzkey.header.num_witness_variables) as usize;
     assert!(

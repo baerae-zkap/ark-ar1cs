@@ -25,27 +25,26 @@
 //!    `[Fr::ONE, y, x]` vector directly. ark-ar1cs no longer requires
 //!    the caller to pass through a `.arwtns` envelope — `prove`
 //!    consumes a raw slice.
-//! 5. **Prove and verify** — `prove(&arzkey, &full_assignment, &mut rng)`
+//! 5. **Prove and verify** —
+//!    `prove(arzkey.pk(), arzkey.arcs(), &full_assignment, &mut rng)`
 //!    runs the R1CS pre-flight + Groth16 proof construction;
 //!    `verify(&arzkey, &public_inputs, &proof)` checks the pairing.
 //!
 //! ## Optional header binding (caller's one-line responsibility)
 //!
-//! ark-ar1cs no longer wires a `bind_check` automatically. Production
-//! callers who want to make sure the loaded `.arzkey` matches an
+//! `prove` does not bind circuit identity inside the call. Production
+//! callers who want to make sure the loaded artifacts match an
 //! out-of-band expected circuit identity (e.g. from a deployment
 //! manifest) perform the comparison themselves before calling `prove`:
 //!
 //! ```ignore
-//! use ark_ar1cs::{ArtifactMismatchReason, ProverError};
-//!
-//! if arzkey.header.ar1cs_blake3 != expected_ar1cs_blake3 {
-//!     return Err(ProverError::ArtifactMismatch {
-//!         reason: ArtifactMismatchReason::Ar1csBlake3,
-//!     });
+//! if arzkey.arcs().body_blake3() != manifest.expected_ar1cs_blake3 {
+//!     return Err(MyCallerError::WrongCircuitArtifact);
 //! }
-//! prove(&arzkey, &full_assignment, &mut rng)?;
+//! prove(arzkey.pk(), arzkey.arcs(), &full_assignment, &mut rng)?;
 //! ```
+//!
+//! See `docs/artifact-trust-boundary.md` for the rationale.
 
 use std::error::Error;
 
@@ -135,7 +134,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     //    Groth16 proof construction. verify() checks the pairing
     //    against arzkey.vk(); Ok(true) means the public input + proof
     //    are consistent with the embedded VK.
-    let proof = prove(&arzkey, &full_assignment, &mut rng)?;
+    let proof = prove(arzkey.pk(), arzkey.arcs(), &full_assignment, &mut rng)?;
     let public_inputs = [y];
     let ok = verify(&arzkey, &public_inputs, &proof)?;
     println!("[5/5] verify          → {ok}");
