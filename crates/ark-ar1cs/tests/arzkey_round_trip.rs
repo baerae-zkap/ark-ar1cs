@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use ark_ar1cs::arzkey::ArzkeyFile;
 /// `.arzkey` happy-path round-trip test on BN254.
 ///

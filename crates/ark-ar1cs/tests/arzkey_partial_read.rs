@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 //! Phase D.6 / TEST-5 / OV-3 — header-only partial-read VK extraction.
 //!
 //! Validates the partial-read claim from the design doc: a verifier-only

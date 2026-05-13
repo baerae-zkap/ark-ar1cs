@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 /// Format round-trip, error-rejection, and validation tests.
 ///
 /// Circuit fixture: x * 1 = x

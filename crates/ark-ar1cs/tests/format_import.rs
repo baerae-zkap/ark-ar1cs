@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 /// Importer tests: replay, curve-ID guard, and edge cases.
 use ark_ar1cs::format::importer::ImportedCircuit;
 use ark_ar1cs::format::test_fixtures::make_test_matrices;

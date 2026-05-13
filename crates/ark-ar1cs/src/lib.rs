@@ -31,7 +31,7 @@
 //! See `.omc/plans/2026-05-13-stream-1.md` §"PR 1.2" for the crate-fusion
 //! history.
 
-#![deny(unsafe_code)]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
 pub mod arzkey;
 pub mod format;

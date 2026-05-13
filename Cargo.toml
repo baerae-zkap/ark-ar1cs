@@ -8,10 +8,11 @@ members = [
 resolver = "2"
 
 [workspace.package]
-edition    = "2021"
-license    = "MIT OR Apache-2.0"
-repository = "https://github.com/snp-labs/ark-ar1cs"
-version    = "0.1.0"
+edition      = "2021"
+license      = "MIT OR Apache-2.0"
+repository   = "https://github.com/snp-labs/ark-ar1cs"
+version      = "0.1.0"
+rust-version = "1.81"
 
 [workspace.dependencies]
 # arkworks 0.6 family. Default features stay on, mirroring the pre-redesign
@@ -36,7 +37,25 @@ serde         = { version = "1", default-features = false, features = ["derive",
 tempfile      = { version = "3" }
 thiserror     = { version = "2" }
 
-# [workspace.lints] deferred to Stream 3: CI uses `cargo clippy --all -- -D warnings`
-# (.github/workflows/ci.yml:35), so introducing `warn` lints here would immediately
-# break CI. Stream 3 audits existing unwrap/expect/missing-doc sites first, then
-# introduces a workspace lint policy that the codebase already satisfies.
+[workspace.lints.rust]
+# Workspace-level `unsafe_code = "deny"` replaces per-crate `#![deny(unsafe_code)]`.
+# wasm-witness's `abi.rs`, `macros.rs`, `mock.rs` opt back in via file-level
+# `#![allow(unsafe_code)]` since they implement the wasm ABI boundary.
+unsafe_code      = "deny"
+unused_must_use  = "deny"
+unreachable_pub  = "warn"
+
+[workspace.lints.clippy]
+# `unwrap_used` is promoted to `deny` (Stream 2 PR 2.3). `expect_used` is
+# intentionally NOT enabled here — under CI's `cargo clippy --all -- -D warnings`,
+# `warn` is escalated to error and every `.expect("...")` call is rejected
+# regardless of message. The 6 production `expect()` sites
+# (`compat.rs`'s pop-after-validate, infallible `Vec` write, etc.) carry
+# invariant messages that human review verifies; clippy can't tell those
+# apart from accidental panics, so the lint adds friction without value.
+# Test code allows panic-prone macros via `#![cfg_attr(test, allow(...))]`
+# in each `lib.rs` and `#![allow(...)]` at the top of each integration test.
+unwrap_used      = "deny"
+panic            = "warn"
+todo             = "warn"
+dbg_macro        = "warn"

@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 /// End-to-end test: export → import → generate_parameters produces identical proving keys.
 ///
 /// Circuit: prove knowledge of x such that x * x = y  (y is a public input)

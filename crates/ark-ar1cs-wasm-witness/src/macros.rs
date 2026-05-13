@@ -1,3 +1,9 @@
+// File-level opt-out of the workspace `unsafe_code = "deny"` policy: this
+// module expands to `#[no_mangle] pub unsafe extern "C" fn` wasm exports.
+// `unsafe_op_in_unsafe_fn` (enforced at crate level) keeps every
+// `unsafe { ... }` block explicit.
+#![allow(unsafe_code)]
+
 //! `export_witness_generator!` — emits the wasm ABI exports for a circuit.
 //!
 //! The macro generates four `#[no_mangle] pub extern "C"` functions on

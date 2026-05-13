@@ -15,7 +15,7 @@ use ark_ff::PrimeField;
 ///
 /// Cost is `O(sum of matrix nonzeros)`, dwarfed by the Groth16 MSM that
 /// follows on a valid assignment.
-pub fn check_r1cs_satisfaction<F: PrimeField>(
+pub(crate) fn check_r1cs_satisfaction<F: PrimeField>(
     arcs: &ArcsFile<F>,
     full_assignment: &[F],
 ) -> Result<(), ProverError> {

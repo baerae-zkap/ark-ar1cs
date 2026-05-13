@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 //! Phase D.5(a) — for any R1CS-satisfying assignment, `prove → verify`
 //! returns `Ok(true)`.
 //!

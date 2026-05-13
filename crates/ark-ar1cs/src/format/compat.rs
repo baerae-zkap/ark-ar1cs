@@ -37,9 +37,12 @@ impl<F: PrimeField> ConstraintMatrices<F> {
         if r1cs.len() != 3 {
             return Err(SynthesisError::Unsatisfiable);
         }
-        let c = r1cs.pop().unwrap();
-        let b = r1cs.pop().unwrap();
-        let a = r1cs.pop().unwrap();
+        // INVARIANT: `r1cs.len() == 3` validated immediately above. The
+        // arkworks GR1CS R1CS predicate emits matrices in (a, b, c)
+        // push-order, so pop yields c first, then b, then a.
+        let c = r1cs.pop().expect("validated len() == 3 above");
+        let b = r1cs.pop().expect("validated len() == 3 above");
+        let a = r1cs.pop().expect("validated len() == 3 above");
         let a_num_non_zero = a.iter().map(|r| r.len()).sum();
         let b_num_non_zero = b.iter().map(|r| r.len()).sum();
         let c_num_non_zero = c.iter().map(|r| r.len()).sum();

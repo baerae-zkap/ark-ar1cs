@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 /// Canonical-sort tests (Phase A.1, ARCH-1).
 ///
 /// `write_matrix` sorts `(coeff, var_idx)` pairs by `var_idx` ascending within
