@@ -9,13 +9,12 @@
 //!
 //! `setup_with_witness` (BN254) and `setup_with_witness_bls` (BLS12-381)
 //! both wrap a single curve-generic `setup_with_witness_curve<E>` so the
-//! curve choice is explicit at the test site (Phase D Q3 #2 cross-curve
-//! coverage). Each helper returns a freshly-built `ArzkeyFile<E>` paired
-//! with the raw `Vec<E::ScalarField>` full assignment
-//! `[F::ONE, y, x]` — the layout that `prove` expects.
+//! curve choice is explicit at the test site. Each helper returns the
+//! freshly-built `ProvingKey<E>` and `ArcsFile<E::ScalarField>` separately
+//! (no `.arzkey` envelope), paired with the raw `Vec<E::ScalarField>` full
+//! assignment `[F::ONE, y, x]` — the layout that `prove` expects.
 #![allow(dead_code)]
 
-use ark_ar1cs::arzkey::ArzkeyFile;
 use ark_ar1cs::format::ConstraintMatrices;
 use ark_ar1cs::format::{ArcsFile, CurveId};
 use ark_bls12_381::{Bls12_381, Fr as BlsFr};
@@ -30,9 +29,9 @@ use ark_relations::gr1cs::{
 use rand::{rngs::StdRng, SeedableRng};
 
 #[derive(Clone)]
-pub struct SquareCircuit<F: PrimeField> {
-    pub x: Option<F>,
-    pub y: F,
+pub(crate) struct SquareCircuit<F: PrimeField> {
+    pub(crate) x: Option<F>,
+    pub(crate) y: F,
 }
 
 impl<F: PrimeField> ConstraintSynthesizer<F> for SquareCircuit<F> {
@@ -48,12 +47,12 @@ impl<F: PrimeField> ConstraintSynthesizer<F> for SquareCircuit<F> {
     }
 }
 
-pub fn seeded_rng() -> StdRng {
+pub(crate) fn seeded_rng() -> StdRng {
     StdRng::from_seed([42u8; 32])
 }
 
 /// Re-synthesize `circuit` in `Setup` mode and pull `ConstraintMatrices`.
-pub fn collect_matrices<F, C>(circuit: C) -> ConstraintMatrices<F>
+pub(crate) fn collect_matrices<F, C>(circuit: C) -> ConstraintMatrices<F>
 where
     F: PrimeField,
     C: ConstraintSynthesizer<F>,
@@ -66,13 +65,17 @@ where
     ark_ar1cs::format::ConstraintMatrices::from_cs(&cs).expect("to_matrices() failed")
 }
 
-/// Curve-generic e2e helper: run Groth16 setup over `E`, wrap as `.arzkey`,
-/// compute `(x, y = x*x)`, and build the full assignment
+/// Curve-generic e2e helper: run Groth16 setup over `E`, build the matching
+/// `.ar1cs`, compute `(x, y = x*x)`, and build the full assignment
 /// `[F::ONE, y, x]` directly as a `Vec<E::ScalarField>`.
+///
+/// Returns `(pk, arcs, full_assignment)` as three separate values — the
+/// post-migration surface holds the proving key and the `.ar1cs` body
+/// independently and binds them out of band.
 fn setup_with_witness_curve<E: Pairing>(
     curve_id: CurveId,
     x_value: u64,
-) -> (ArzkeyFile<E>, Vec<E::ScalarField>) {
+) -> (ProvingKey<E>, ArcsFile<E::ScalarField>, Vec<E::ScalarField>) {
     let x = E::ScalarField::from(x_value);
     let y = x * x;
 
@@ -90,24 +93,22 @@ fn setup_with_witness_curve<E: Pairing>(
         y: E::ScalarField::from(0u64),
     });
     let arcs = ArcsFile::from_matrices(curve_id, &matrices);
-    let arzkey = ark_ar1cs_build::from_setup_output::<E>(arcs, pk);
 
     // SquareCircuit wire layout: [ONE, y (instance), x (witness)].
     let full_assignment = vec![E::ScalarField::ONE, y, x];
 
-    (arzkey, full_assignment)
+    (pk, arcs, full_assignment)
 }
 
-/// One-shot helper that runs a real Groth16 setup over BN254, packages the
-/// result as an `ArzkeyFile<Bn254>`, and returns the matching full
-/// assignment `[Fr::ONE, y, x]` for `(x, y = x*x)`.
-pub fn setup_with_witness(x_value: u64) -> (ArzkeyFile<Bn254>, Vec<BnFr>) {
+/// One-shot helper that runs a real Groth16 setup over BN254 and returns
+/// the matching `(pk, arcs, full_assignment)` for `(x, y = x*x)`.
+pub(crate) fn setup_with_witness(x_value: u64) -> (ProvingKey<Bn254>, ArcsFile<BnFr>, Vec<BnFr>) {
     setup_with_witness_curve::<Bn254>(CurveId::Bn254, x_value)
 }
 
-/// BLS12-381 mirror of [`setup_with_witness`]. Used by the Phase D Q3 #2
-/// cross-curve e2e test to verify the prover stays correct under a second
-/// pairing curve.
-pub fn setup_with_witness_bls(x_value: u64) -> (ArzkeyFile<Bls12_381>, Vec<BlsFr>) {
+/// BLS12-381 mirror of [`setup_with_witness`].
+pub(crate) fn setup_with_witness_bls(
+    x_value: u64,
+) -> (ProvingKey<Bls12_381>, ArcsFile<BlsFr>, Vec<BlsFr>) {
     setup_with_witness_curve::<Bls12_381>(CurveId::Bls12_381, x_value)
 }

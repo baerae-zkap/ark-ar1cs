@@ -87,7 +87,7 @@ fn display_serialization_wraps_inner() {
 
 #[test]
 fn display_io_wraps_inner() {
-    let inner = std::io::Error::new(std::io::ErrorKind::Other, "underlying");
+    let inner = std::io::Error::other("underlying");
     let e = ArcsError::Io(inner);
     assert_eq!(format!("{}", e), "I/O error: underlying");
 }

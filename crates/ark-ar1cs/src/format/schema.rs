@@ -115,8 +115,10 @@ impl<F: PrimeField> ArcsFile<F> {
     /// `.ar1cs` output and therefore identical `body_blake3()` values.
     ///
     /// This is the same hash that appears in the file's own trailer and
-    /// must be embedded in any sibling format that references this file
-    /// (`.arzkey`, `.arwtns`).
+    /// is the single sanctioned primitive for *caller-side* circuit
+    /// identity binding — callers compare `arcs.body_blake3()` against
+    /// a deployment-pinned expected hash before invoking
+    /// [`crate::prove`]. See `docs/artifact-trust-boundary.md`.
     pub fn body_blake3(&self) -> [u8; 32] {
         let body = self
             .body_bytes()

@@ -15,12 +15,15 @@ fn main() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(20);
     let input = LargeMockInput { seed: 3, depth };
-    let bytes = postcard::to_allocvec(&input).unwrap();
+    let bytes = postcard::to_allocvec(&input)
+        .expect("postcard::to_allocvec on a Serialize-derive type cannot fail");
     let witness_bytes = witness_generator_native::<LargeMockGenerator>(
         &bytes,
         &EMBEDDED_LARGE_AR1CS_BLAKE3,
         &EMBEDDED_LARGE_AR1CS_BLAKE3,
     )
-    .unwrap();
-    std::io::stdout().write_all(&witness_bytes).unwrap();
+    .expect("witness_generator_native must succeed for embedded blake3 + canned input");
+    std::io::stdout()
+        .write_all(&witness_bytes)
+        .expect("stdout write of dumped witness bytes must succeed");
 }

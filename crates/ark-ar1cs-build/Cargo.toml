@@ -1,6 +1,6 @@
 [package]
 name = "ark-ar1cs-build"
-description = "Build-time toolchain: Circuit → .ar1cs + .arzkey"
+description = "Build-time toolchain: Circuit → .ar1cs"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

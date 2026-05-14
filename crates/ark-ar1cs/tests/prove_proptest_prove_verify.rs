@@ -3,31 +3,28 @@
 //! Phase D.5(a) — for any R1CS-satisfying assignment, `prove → verify`
 //! returns `Ok(true)`.
 //!
-//! Per `prove-must-preflight-r1cs` (10/10): an `Ok(Proof)` that fails verify
-//! is the worst kind of footgun in a SNARK toolkit, so this property is the
-//! structural validation that the OV-1 R1CS pre-flight + Groth16 wiring
-//! together hold for every valid witness across the OV-5 #iv generator
-//! bound (≤16 constraints, ≤64 non-zeros).
+//! Per `prove-must-preflight-r1cs` (10/10): an `Ok(Proof)` that fails
+//! verify is the worst kind of footgun in a SNARK toolkit, so this
+//! property is the structural validation that the OV-1 R1CS pre-flight
+//! + Groth16 wiring together hold for every valid witness across the
+//!   OV-5 #iv generator bound (≤16 constraints, ≤64 non-zeros).
 //!
-//! The matrices are fed to `Groth16::generate_random_parameters_with_reduction`
-//! through [`ImportedCircuit`] — exactly the production setup path that
-//! consumers (zkap-zkp, etc.) follow — so this test also validates the
-//! `.ar1cs → ImportedCircuit → setup → from_setup_output → prove → verify`
-//! pipeline end-to-end.
+//! The matrices are fed to
+//! `Groth16::generate_random_parameters_with_reduction` through
+//! [`ImportedCircuit`] — exactly the production setup path that
+//! consumers follow — so this test also validates the
+//! `.ar1cs → ImportedCircuit → setup → prove → verify` pipeline end-to-end.
 //!
 //! Runs at ≥1000 iterations under `cargo test --release` (OV-5 #iv).
-//! Wall-clock budget: ≤2 minutes / property; observed wall-clock should sit
-//! around tens of seconds because Groth16 setup dominates and matrices are
-//! capped at 16 constraints.
 
 #![cfg(not(target_arch = "wasm32"))]
 
 use ark_ar1cs::format::importer::ImportedCircuit;
 use ark_ar1cs::format::test_fixtures::arb_matrices_with_assignment;
 use ark_ar1cs::format::{ArcsFile, CurveId};
-use ark_ar1cs::{prove, verify};
+use ark_ar1cs::prove;
 use ark_bn254::{Bn254, Fr};
-use ark_groth16::Groth16;
+use ark_groth16::{prepare_verifying_key, Groth16};
 use ark_std::rand::{rngs::StdRng, SeedableRng};
 use proptest::prelude::*;
 
@@ -68,12 +65,11 @@ proptest! {
         let pk = Groth16::<Bn254>::generate_random_parameters_with_reduction(circuit, &mut rng)
             .expect("Groth16 setup should not fail for bounded R1CS-valid matrices");
 
-        let arzkey = ark_ar1cs_build::from_setup_output::<Bn254>(arcs, pk);
-
-        let proof = prove(arzkey.pk(), arzkey.arcs(), &z, &mut rng)
+        let proof = prove(&pk, &arcs, &z, &mut rng)
             .expect("prove() must not fail on a generator-guaranteed valid assignment");
-        let ok = verify(&arzkey, &public_inputs, &proof)
-            .expect("verify() must not error on a well-formed proof");
+        let pvk = prepare_verifying_key(&pk.vk);
+        let ok = Groth16::<Bn254>::verify_proof(&pvk, &proof, &public_inputs)
+            .expect("Groth16::verify_proof must not error on a well-formed proof");
         prop_assert!(ok, "Groth16 verify must accept a proof of a valid assignment");
     }
 }

@@ -4,16 +4,18 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Circuit-agnostic Groth16 runtime: .ar1cs + .arzkey codecs + prove/verify"
+description = "Circuit-agnostic Groth16 runtime: .ar1cs codec + prove primitive"
 categories = ["cryptography"]
 keywords = ["zk-snark", "groth16", "arkworks", "r1cs"]
 
 [features]
 default = []
-# Production fast-path: switch ArzkeyFile::read VK/PK deserialization to the
-# `_unchecked` ark-serialize variants, skipping curve-point validation. Use
-# only when the .arzkey provenance is trusted (signed manifest, in-band
-# integrity check via blake3 trailer, or own setup ceremony output).
+# Vestigial production fast-path feature retained for one more migration
+# commit. The reader paths it used to gate (`.arzkey::read`'s
+# `_unchecked` deserialize arms) were deleted along with the envelope
+# in this commit, so the feature is now a no-op. The feature itself is
+# removed in the next migration commit; callers that want
+# `_unchecked` ark-serialize call it directly on their `ProvingKey`.
 fast-prove = []
 # Exposes the `format::test_fixtures` module: `make_test_matrices()` (BN254)
 # and the `arb_matrices_with_assignment` proptest strategy. The proptest
@@ -46,7 +48,7 @@ proptest = { workspace = true, optional = true }
 # feature on the lib for integration tests that reference
 # `format::test_fixtures::*`.
 ark-ar1cs       = { path = ".", features = ["test-fixtures"] }
-# Build-time toolchain used by integration tests (exporter, from_setup_output).
+# Build-time toolchain used by integration tests (export_circuit).
 ark-ar1cs-build = { path = "../ark-ar1cs-build" }
 ark-bls12-381   = { workspace = true }
 ark-bn254     = { workspace = true }
@@ -58,7 +60,6 @@ ark-std       = { workspace = true }
 blake3        = { workspace = true }
 proptest      = { workspace = true }
 rand          = { workspace = true }
-tempfile      = { workspace = true }
 
 [lints]
 workspace = true

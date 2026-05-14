@@ -62,7 +62,9 @@
 //! catch-all arm.
 
 use ark_ff::PrimeField;
-use ark_relations::gr1cs::{ConstraintSynthesizer, ConstraintSystem, SynthesisError, SynthesisMode};
+use ark_relations::gr1cs::{
+    ConstraintSynthesizer, ConstraintSystem, SynthesisError, SynthesisMode,
+};
 
 /// Errors raised by [`synthesize_full_assignment`].
 #[non_exhaustive]
@@ -214,10 +216,12 @@ mod tests {
     /// not a panic and not a different variant.
     #[test]
     fn synthesize_full_assignment_propagates_synthesis_error() {
-        let err =
-            synthesize_full_assignment::<FailingCircuit, Fr>(FailingCircuit).unwrap_err();
+        let err = synthesize_full_assignment::<FailingCircuit, Fr>(FailingCircuit).unwrap_err();
         assert!(
-            matches!(err, WitnessError::Synthesis(SynthesisError::AssignmentMissing)),
+            matches!(
+                err,
+                WitnessError::Synthesis(SynthesisError::AssignmentMissing)
+            ),
             "got: {err:?}"
         );
     }

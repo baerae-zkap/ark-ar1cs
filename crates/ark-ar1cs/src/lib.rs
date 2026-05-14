@@ -1,18 +1,18 @@
-//! Circuit-agnostic Groth16 runtime: portable codecs (.ar1cs, .arzkey)
-//! plus prove/verify built on arkworks 0.6.
+//! Circuit-agnostic Groth16 runtime: portable `.ar1cs` codec plus a
+//! circuit-agnostic `prove` primitive built on arkworks 0.6.
 //!
 //! Public surface:
 //!   * [`format`] — `.ar1cs` envelope (matrices + header).
 //!   * [`witness`] — generic `ConstraintSynthesizer → Vec<F>` helper
 //!     ([`synthesize_full_assignment`] / [`WitnessError`], also
 //!     re-exported at crate root).
-//!   * [`arzkey`] — `.arzkey` setup-output (matrices + VK + PK).
-//!     Removed in a later commit of the feature-boundary migration;
-//!     transitional today.
-//!   * [`prove`] / [`verify`] — Groth16 prover and verifier wrapper.
-//!     `prove` takes `(&ProvingKey<E>, &ArcsFile<E::ScalarField>,
-//!     &[E::ScalarField], &mut R)` and runs a length + R1CS preflight
-//!     before forwarding to `Groth16::create_proof_with_reduction_and_matrices`.
+//!   * [`prove`] — Groth16 prover. Takes `(&ProvingKey<E>,
+//!     &ArcsFile<E::ScalarField>, &[E::ScalarField], &mut R)` and
+//!     runs a length + R1CS preflight before forwarding to
+//!     `Groth16::create_proof_with_reduction_and_matrices`. Verify
+//!     is one line of arkworks
+//!     (`Groth16::verify_proof(&prepare_verifying_key(&pk.vk),
+//!     &proof, public_inputs)`) and is not wrapped here.
 //!
 //! ## Caller-side binding (recommended pattern)
 //!
@@ -26,6 +26,8 @@
 //!     return Err(MyCallerError::WrongCircuitArtifact);
 //! }
 //! let proof = ark_ar1cs::prove(&pk, &arcs, &full_assignment, &mut rng)?;
+//! let pvk = ark_groth16::prepare_verifying_key(&pk.vk);
+//! let ok = ark_groth16::Groth16::verify_proof(&pvk, &proof, public_inputs)?;
 //! ```
 //!
 //! Curve agreement between `pk` and `arcs` is enforced at the type
@@ -37,16 +39,13 @@
 
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::expect_used))]
 
-pub mod arzkey;
 pub mod format;
 pub mod witness;
 
 mod preflight;
 mod prove;
 mod prove_error;
-mod verifier;
 
 pub use prove::prove;
 pub use prove_error::ProverError;
-pub use verifier::verify;
 pub use witness::{synthesize_full_assignment, WitnessError};

@@ -88,7 +88,6 @@ dependencies = [
  "blake3",
  "proptest",
  "rand 0.8.5",
- "tempfile",
  "thiserror",
 ]
 
