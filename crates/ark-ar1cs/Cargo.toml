@@ -10,13 +10,6 @@ keywords = ["zk-snark", "groth16", "arkworks", "r1cs"]
 
 [features]
 default = []
-# Vestigial production fast-path feature retained for one more migration
-# commit. The reader paths it used to gate (`.arzkey::read`'s
-# `_unchecked` deserialize arms) were deleted along with the envelope
-# in this commit, so the feature is now a no-op. The feature itself is
-# removed in the next migration commit; callers that want
-# `_unchecked` ark-serialize call it directly on their `ProvingKey`.
-fast-prove = []
 # Exposes the `format::test_fixtures` module: `make_test_matrices()` (BN254)
 # and the `arb_matrices_with_assignment` proptest strategy. The proptest
 # submodule is itself `cfg(not(target_arch = "wasm32"))`-gated so wasm builds
