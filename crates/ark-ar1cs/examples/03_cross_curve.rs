@@ -2,47 +2,41 @@
 //!
 //! BN254 is the workhorse curve covered by every fixture and property
 //! test in the workspace. BLS12-381 is the cross-curve coverage that
-//! ark-ar1cs ships at v0 to validate that the envelopes, hashes, and
-//! prover are correct against a second `E: Pairing` and not merely
-//! against BN254 happy paths. This example runs the
+//! ark-ar1cs ships to validate that the codec, hashes, and prover are
+//! correct against a second `E: Pairing` and not merely against BN254
+//! happy paths. This example runs the
 //! `synthesize → setup → prove → verify` pipeline on each curve and
 //! prints both outcomes.
 //!
 //! The same `SquareCircuit<F>` body drives both runs; only the scalar
-//! field, the `CurveId`, and the pairing engine vary. The mirror of
-//! this example as an integration test lives at
-//! `crates/ark-ar1cs-prover/tests/cross_curve.rs`.
+//! field, the `CurveId`, and the pairing engine vary.
 //!
 //! ## Optional header binding (caller's one-line responsibility)
 //!
-//! ark-ar1cs no longer wires a `bind_check` automatically. If a caller
-//! wants to confirm the loaded `.arzkey` matches an expected circuit
+//! `prove` does not bind circuit identity inside the call. If a caller
+//! wants to confirm the loaded artifacts match an expected circuit
 //! identity, the comparison is one line before `prove`:
 //!
 //! ```ignore
-//! use ark_ar1cs::{ArtifactMismatchReason, ProverError};
-//!
-//! if arzkey.header.ar1cs_blake3 != expected_ar1cs_blake3 {
-//!     return Err(ProverError::ArtifactMismatch {
-//!         reason: ArtifactMismatchReason::Ar1csBlake3,
-//!     });
+//! if arcs.body_blake3() != manifest.expected_ar1cs_blake3 {
+//!     return Err(MyCallerError::WrongCircuitArtifact);
 //! }
-//! prove(&arzkey, &full_assignment, &mut rng)?;
+//! prove(&pk, &arcs, &full_assignment, &mut rng)?;
 //! ```
 //!
-//! (Wrong-curve `.arzkey` files are rejected one layer earlier by
-//! `ArzkeyFile::<E>::read` at parse time — see the integration test
-//! `tests/cross_curve.rs::wrong_curve_arzkey_rejected_at_parse_time`.)
+//! Curve agreement between `pk` and `arcs` is enforced at the *type*
+//! level — `&ProvingKey<E>` + `&ArcsFile<E::ScalarField>` share `E`,
+//! so a wrong-curve pair fails to compile.
 
 use std::error::Error;
 
 use ark_ar1cs::format::{ArcsFile, CurveId};
-use ark_ar1cs::{prove, verify};
+use ark_ar1cs::prove;
 use ark_bls12_381::Bls12_381;
 use ark_bn254::Bn254;
 use ark_ec::pairing::Pairing;
 use ark_ff::{Field, PrimeField};
-use ark_groth16::{Groth16, ProvingKey};
+use ark_groth16::{prepare_verifying_key, Groth16, ProvingKey};
 use ark_relations::gr1cs::{
     ConstraintSynthesizer, ConstraintSystem, ConstraintSystemRef, LinearCombination,
     OptimizationGoal, SynthesisError, SynthesisMode,
@@ -102,13 +96,13 @@ fn run_curve<E: Pairing>(curve_id: CurveId, x_value: u64) -> Result<bool, Box<dy
         y: E::ScalarField::from(0u64),
     })?;
     let arcs = ArcsFile::<E::ScalarField>::from_matrices(curve_id, &matrices);
-    let arzkey = ark_ar1cs_build::from_setup_output::<E>(arcs, pk);
 
     // SquareCircuit wire layout: [ONE, y (instance), x (witness)].
     let full_assignment: Vec<E::ScalarField> = vec![E::ScalarField::ONE, y, x];
 
-    let proof = prove(&arzkey, &full_assignment, &mut rng)?;
-    let ok = verify(&arzkey, &[y], &proof)?;
+    let proof = prove(&pk, &arcs, &full_assignment, &mut rng)?;
+    let pvk = prepare_verifying_key(&pk.vk);
+    let ok = Groth16::<E>::verify_proof(&pvk, &proof, &[y])?;
     Ok(ok)
 }
 

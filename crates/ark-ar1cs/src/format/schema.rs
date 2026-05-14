@@ -115,8 +115,10 @@ impl<F: PrimeField> ArcsFile<F> {
     /// `.ar1cs` output and therefore identical `body_blake3()` values.
     ///
     /// This is the same hash that appears in the file's own trailer and
-    /// must be embedded in any sibling format that references this file
-    /// (`.arzkey`, `.arwtns`).
+    /// is the single sanctioned primitive for *caller-side* circuit
+    /// identity binding — callers compare `arcs.body_blake3()` against
+    /// a deployment-pinned expected hash before invoking
+    /// [`crate::prove`]. See `docs/artifact-trust-boundary.md`.
     pub fn body_blake3(&self) -> [u8; 32] {
         let body = self
             .body_bytes()
@@ -136,8 +138,12 @@ impl<F: PrimeField> ArcsFile<F> {
     /// Deserialize from `r`.
     ///
     /// Reads all bytes, verifies the 32-byte Blake3 checksum trailer, then
-    /// parses and validates the header + matrices. Bounded allocation:
-    /// `read_matrix` rejects files whose row/entry counts exceed the header.
+    /// parses the header and applies a predicted-size guard against the
+    /// declared counts before reading any matrix. The guard rejects
+    /// forged headers whose declared `num_constraints` / `*_non_zero`
+    /// would require more than [`MAX_FILE_BYTES`] of matrix payload,
+    /// preventing `read_matrix` from issuing a `Vec::with_capacity` for
+    /// a `u64::MAX`-sized row count.
     pub fn read<R: Read>(r: &mut R) -> Result<Self, ArcsError> {
         // Read the entire file into memory so we can verify the checksum.
         // Limit reads to MAX_FILE_BYTES to prevent OOM from oversized streams.
@@ -166,6 +172,16 @@ impl<F: PrimeField> ArcsFile<F> {
         // Parse header + matrices from the verified body.
         let mut cursor = Cursor::new(body);
         let header = ArcsHeader::read(&mut cursor)?;
+
+        // Header-count guard: reject before any matrix read if the declared
+        // counts cannot describe a well-formed file. `predicted_min_body_bytes`
+        // returns `None` on u64 overflow and a tight lower bound otherwise; in
+        // either case a value above MAX_FILE_BYTES is unrepresentable.
+        match predicted_min_body_bytes(&header) {
+            Some(min_bytes) if min_bytes <= MAX_FILE_BYTES => {}
+            _ => return Err(ArcsError::FileTooLarge),
+        }
+
         let a = read_matrix(
             &mut cursor,
             header.num_constraints as usize,
@@ -277,4 +293,34 @@ impl<F: PrimeField> ArcsFile<F> {
 
         Ok(())
     }
+}
+
+/// Lower bound on the body byte count (header + 3 matrices, no trailer)
+/// implied by the declared header fields. Returns `None` on `u64` overflow.
+///
+/// Per-matrix lower bound:
+///   8 (`num_rows: u64`)
+///   + 8 * `num_constraints` (`num_entries: u64` per row)
+///   + 9 * `non_zero`        (≥1 byte compressed coeff + 8-byte `var_idx`)
+///
+/// The 1-byte coefficient floor is conservative — every supported `PrimeField`
+/// serializes to at least one byte compressed, so the bound stays valid across
+/// curves without dragging an instance-method `compressed_size()` into the
+/// guard.
+fn predicted_min_body_bytes(h: &ArcsHeader) -> Option<u64> {
+    const HEADER_BYTES: u64 = 57;
+    const PER_MATRIX_ROW_HEADER: u64 = 8;
+    const PER_ROW_COUNT_BYTES: u64 = 8;
+    const PER_NZ_MIN_BYTES: u64 = 9;
+
+    let row_count_overhead = h.num_constraints.checked_mul(PER_ROW_COUNT_BYTES)?;
+    let mut total = HEADER_BYTES;
+    for nz in [h.a_non_zero, h.b_non_zero, h.c_non_zero] {
+        let nz_overhead = nz.checked_mul(PER_NZ_MIN_BYTES)?;
+        let matrix_min = PER_MATRIX_ROW_HEADER
+            .checked_add(row_count_overhead)?
+            .checked_add(nz_overhead)?;
+        total = total.checked_add(matrix_min)?;
+    }
+    Some(total)
 }

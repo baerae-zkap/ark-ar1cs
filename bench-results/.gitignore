@@ -1,6 +1,0 @@
-# Raw measurement data is environment-dependent (CPU, OS, RN version);
-# the *.json files in this directory are local artifacts, not source.
-# Summaries that survive should live in docs/benchmarks-2pow20.md instead.
-*.json
-*.txt
-dhat-heap.json

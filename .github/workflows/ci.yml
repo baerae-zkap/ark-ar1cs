@@ -45,7 +45,30 @@ jobs:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32  # v2
       - name: cargo build --target wasm32-unknown-unknown
-        run: cargo build --target wasm32-unknown-unknown -p ark-ar1cs -p ark-ar1cs-wasm-witness
+        run: cargo build --target wasm32-unknown-unknown -p ark-ar1cs
+
+  boundary-verification:
+    name: Boundary verification (probes)
+    runs-on: ubuntu-latest
+    # Both probe scripts honour ARK_AR1CS_PROBE_TMPDIR (= TMP_ROOT) and
+    # export CARGO_TARGET_DIR="$TMP_ROOT/shared-target" internally. Pointing
+    # the probe tmpdir inside `target/` lets Swatinem/rust-cache cover the
+    # arkworks dep graph each probe builds against. `shared-key` keeps the
+    # cache namespace distinct from the Test / Clippy / wasm32 jobs.
+    env:
+      ARK_AR1CS_PROBE_TMPDIR: ${{ github.workspace }}/target/probe-cache
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9  # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32  # v2
+        with:
+          shared-key: boundary-probes
+      - name: scripts/verify-api-shape.sh final
+        run: scripts/verify-api-shape.sh final
+      - name: scripts/verify-removal-boundary.sh final
+        run: scripts/verify-removal-boundary.sh final
 
   audit:
     name: Security Audit
