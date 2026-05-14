@@ -2,8 +2,6 @@
 members = [
     "crates/ark-ar1cs",
     "crates/ark-ar1cs-build",
-    "crates/ark-ar1cs-wasm-witness",
-    "crates/ark-ar1cs-wasm-witness/tests/fixtures/large-witness-fixture",
 ]
 resolver = "2"
 
@@ -28,19 +26,13 @@ ark-serialize = { version = "0.6" }
 ark-std       = { version = "0.6" }
 
 blake3        = { version = "1" }
-# postcard + serde are explicitly no-std in the source tree (wasm-witness
-# crates them this way) — preserve that opt-out at the workspace level.
-postcard      = { version = "1", default-features = false, features = ["alloc"] }
 proptest      = { version = "1" }
 rand          = { version = "0.8" }
-serde         = { version = "1", default-features = false, features = ["derive", "alloc"] }
 tempfile      = { version = "3" }
 thiserror     = { version = "2" }
 
 [workspace.lints.rust]
 # Workspace-level `unsafe_code = "deny"` replaces per-crate `#![deny(unsafe_code)]`.
-# wasm-witness's `abi.rs`, `macros.rs`, `mock.rs` opt back in via file-level
-# `#![allow(unsafe_code)]` since they implement the wasm ABI boundary.
 unsafe_code      = "deny"
 unused_must_use  = "deny"
 unreachable_pub  = "warn"

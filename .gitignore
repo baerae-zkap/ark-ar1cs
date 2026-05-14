@@ -3,5 +3,3 @@ docs
 CLAUDE.md
 .gstack/
 TODOS.md
-# dhat heap profile artifacts (left in CWD by examples/native_mem_2pow20).
-dhat-heap.json

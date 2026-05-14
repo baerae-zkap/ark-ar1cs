@@ -34,10 +34,9 @@
 //! Every consumer of `.ar1cs` + [`crate::prove`] needs to build a full
 //! assignment from some circuit somewhere; the helper is generic over
 //! `C: ConstraintSynthesizer<F>` and makes no wasm or transport
-//! assumptions. Wasm-specific witness export (postcard-decoded input,
-//! ABI status codes, `WitnessAbiCode`) lives one layer up in
-//! `ark-ar1cs-wasm-witness` — there is no wasm dependency in this
-//! module.
+//! assumptions. Any wasm-specific witness export (transport encoding,
+//! ABI status codes) is the consumer's policy and lives in their own
+//! crate — there is no wasm dependency in this module.
 //!
 //! ## Error semantics
 //!
@@ -56,8 +55,8 @@
 //! * [`WitnessError::Serialize`] — `ark_serialize` round-trip failure
 //!   surfaced by helpers that wrap this function with serialization.
 //!
-//! ABI-status conversion (e.g. mapping every variant to
-//! `WitnessAbiCode::CircuitBuildError`) is the caller's concern. The
+//! ABI-status conversion (mapping each variant to whatever status code
+//! the consumer's wasm export shape uses) is the caller's concern. The
 //! variant set is `#[non_exhaustive]` so external crates must include a
 //! catch-all arm.
 
@@ -241,9 +240,9 @@ mod tests {
         assert_eq!(parsed, full);
     }
 
-    /// Regression guard inherited from the wasm-witness `mod tests`: the
-    /// witness-only `SynthesisMode { construct_matrices: false }` path
-    /// must produce the same full-assignment bytes as a default
+    /// Regression guard: the witness-only
+    /// `SynthesisMode { construct_matrices: false }` path must produce
+    /// the same full-assignment bytes as a default
     /// `construct_matrices: true` run.
     #[test]
     fn synthesize_full_assignment_byte_identical_to_default_prove_mode() {

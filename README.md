@@ -6,16 +6,6 @@ then prove from those bytes plus a separately-distributed
 `ProvingKey<E>` — no original `ConstraintSynthesizer` needed at prove
 time.
 
-> **Pre-implementation preview.** This README documents the project
-> surface as it will exist after Commits 2–7 of the
-> [feature-boundary migration](docs/feature-boundary-tdd-plan.md).
-> The production code still ships the older surface (with `.arzkey`,
-> `verify`, `ark-ar1cs-wasm-witness`, `fast-prove`); those are being
-> removed in the upcoming commits. Read
-> [`docs/artifact-trust-boundary.md`](docs/artifact-trust-boundary.md)
-> for what stays inside this library vs. what becomes caller
-> responsibility.
-
 ## Why
 
 Standard arkworks Groth16 keeps the original Rust circuit in memory
@@ -67,8 +57,7 @@ removed.
 - `ProverError` — 4 variants: `WitnessLengthMismatch`,
   `AssignmentNotSatisfying { row }`, `Groth16`, `SerializationError`.
 
-Builds clean on `wasm32-unknown-unknown` (CI-enforced once Commit 7
-lands; documented today).
+Builds clean on `wasm32-unknown-unknown` (CI-enforced).
 
 ### Build-time
 
